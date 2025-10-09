@@ -88,7 +88,9 @@ export function RubricEditor() {
       }),
     )
 
-    setExamples(scoredExamples)
+    const sortedExamples = scoredExamples.sort((a, b) => b.totalScore - a.totalScore)
+
+    setExamples(sortedExamples)
   }, [criteria, examples])
 
   const handleSaveRubric = () => {
