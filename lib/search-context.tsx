@@ -492,7 +492,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
             return {
               ...result,
-              piScore: response.aggregate_score,
+              piScore: response.total_score,
             }
           }),
         )
@@ -523,19 +523,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
   const normalizeScore = useCallback((score: number, mode: SearchMode): number => {
     if (score === undefined || score === null || isNaN(score)) {
-      console.log("[v0] Warning: Invalid score detected:", score, "mode:", mode)
       return 0
     }
-    // BM25 scores are typically 0-10, semantic scores are already 0-1
     if (mode === "keyword") {
-      // Normalize BM25 scores (typically 0-10) to 0-1
       return Math.min(score / 10, 1)
     } else if (mode === "semantic") {
-      // Cosine similarity is already 0-1
       return score
     } else {
-      // Hybrid RRF scores need normalization
-      // RRF scores are typically 0-0.1, scale to 0-1
       return Math.min(score * 10, 1)
     }
   }, [])
@@ -552,13 +546,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        // Step 1: Get initial search results (fetch more for reranking)
         const { searchId, results: initialResults } = await performSearch(query, limit * 2)
 
-        console.log("[v0] Initial results count:", initialResults.length)
-        console.log("[v0] First result score:", initialResults[0]?.score)
-
-        // Step 2: Score each result with the rubric
         const scoredResults = await Promise.all(
           initialResults.map(async (result) => {
             try {
@@ -568,30 +557,9 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                 criteria: rubric.criteria,
               })
 
-              console.log("[v0] Result score before normalization:", result.score)
-
-              // Normalize retrieval score to 0-1
               const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
-              console.log("[v0] Normalized retrieval score:", normalizedRetrievalScore)
-
-              // Use 0 if rubric scoring failed
-              const rubricScore = response.error ? 0 : (response.aggregate_score ?? 0)
-              console.log("[v0] Rubric score:", rubricScore)
-
-              // Combine scores (average of retrieval and rubric scores)
+              const rubricScore = response.error ? 0 : (response.total_score ?? 0)
               const combinedScore = (normalizedRetrievalScore + rubricScore) / 2
-              console.log("[v0] Combined score:", combinedScore)
-
-              // Ensure all scores are valid numbers
-              if (isNaN(combinedScore) || isNaN(normalizedRetrievalScore) || isNaN(rubricScore)) {
-                console.error("[v0] NaN detected in scores:", {
-                  combinedScore,
-                  normalizedRetrievalScore,
-                  rubricScore,
-                  originalScore: result.score,
-                  searchMode,
-                })
-              }
 
               return {
                 ...result,
@@ -601,7 +569,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
               }
             } catch (error) {
               console.error("[v0] Error scoring result:", error)
-              // If scoring fails, use retrieval score only
               const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
               return {
                 ...result,
@@ -613,10 +580,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           }),
         )
 
-        // Step 3: Sort by combined score and take top results
         const rerankedResults = scoredResults.sort((a, b) => b.score - a.score).slice(0, limit)
 
-        // Step 4: Update the search with rubric trace information
         setSearches((prev) =>
           prev.map((search) =>
             search.id === searchId
