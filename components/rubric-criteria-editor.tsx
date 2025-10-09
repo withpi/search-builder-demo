@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,34 +16,37 @@ interface RubricCriteriaEditorProps {
 export function RubricCriteriaEditor({ criteria, onUpdate }: RubricCriteriaEditorProps) {
   const [editingCriteria, setEditingCriteria] = useState<RubricCriterion[]>(criteria)
 
+  useEffect(() => {
+    setEditingCriteria(criteria)
+  }, [criteria])
+
   const handleLabelChange = (index: number, label: string) => {
     const updated = [...editingCriteria]
     updated[index] = { ...updated[index], label }
     setEditingCriteria(updated)
+    const validCriteria = updated.filter((c) => c.label.trim() && c.question.trim())
+    onUpdate(validCriteria.length > 0 ? validCriteria : updated)
   }
 
   const handleQuestionChange = (index: number, question: string) => {
     const updated = [...editingCriteria]
     updated[index] = { ...updated[index], question }
     setEditingCriteria(updated)
+    const validCriteria = updated.filter((c) => c.label.trim() && c.question.trim())
+    onUpdate(validCriteria.length > 0 ? validCriteria : updated)
   }
 
   const handleAddCriterion = () => {
-    setEditingCriteria([...editingCriteria, { label: "", question: "" }])
+    const updated = [...editingCriteria, { label: "", question: "" }]
+    setEditingCriteria(updated)
+    onUpdate(updated)
   }
 
   const handleRemoveCriterion = (index: number) => {
     const updated = editingCriteria.filter((_, i) => i !== index)
     setEditingCriteria(updated)
+    onUpdate(updated)
   }
-
-  const handleSave = () => {
-    // Filter out empty criteria
-    const validCriteria = editingCriteria.filter((c) => c.label.trim() && c.question.trim())
-    onUpdate(validCriteria)
-  }
-
-  const hasChanges = JSON.stringify(editingCriteria) !== JSON.stringify(criteria)
 
   return (
     <div className="space-y-4">
@@ -97,11 +100,6 @@ export function RubricCriteriaEditor({ criteria, onUpdate }: RubricCriteriaEdito
           <Plus className="h-4 w-4 mr-2" />
           Add Criterion
         </Button>
-        {hasChanges && (
-          <Button onClick={handleSave} className="flex-1">
-            Save Changes
-          </Button>
-        )}
       </div>
     </div>
   )
