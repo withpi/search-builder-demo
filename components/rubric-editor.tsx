@@ -16,24 +16,14 @@ export function RubricEditor() {
   const goodExamples: RubricExample[] = validRatedResults
     .filter((r) => r.rating === "up")
     .map((r) => ({
-      llm_input: JSON.stringify([
-        {
-          role: "user",
-          content: String(r.query),
-        },
-      ]),
+      llm_input: String(r.query),
       llm_output: String(r.text),
     }))
 
   const badExamples: RubricExample[] = validRatedResults
     .filter((r) => r.rating === "down")
     .map((r) => ({
-      llm_input: JSON.stringify([
-        {
-          role: "user",
-          content: String(r.query),
-        },
-      ]),
+      llm_input: String(r.query),
       llm_output: String(r.text),
     }))
 

@@ -14,7 +14,7 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 Your project is live at:
 
-**[https://vercel.com/pi-copilot/v0-search-builder](https://vercel.com/pi-copilot/v0-search-builder)**
+**[https://vercel.com/pi-copilot/v0-next-js-workspace-file](https://vercel.com/pi-copilot/v0-next-js-workspace-file)**
 
 ## Build your app
 
