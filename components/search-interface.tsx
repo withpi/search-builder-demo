@@ -14,6 +14,7 @@ import { SearchModeSelector } from "./search-mode-selector"
 import { ResultLimitSelector } from "./result-limit-selector"
 import { RubricSelector } from "./rubric-selector"
 import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
+import { RetrievalTrace } from "./retrieval-trace"
 
 export function SearchInterface() {
   const {
@@ -74,6 +75,11 @@ export function SearchInterface() {
     if (!currentSearchId) return []
     const search = searches.find((s) => s.id === currentSearchId)
     return search?.results || []
+  }, [currentSearchId, searches])
+
+  const currentSearch = useMemo(() => {
+    if (!currentSearchId) return null
+    return searches.find((s) => s.id === currentSearchId) || null
   }, [currentSearchId, searches])
 
   return (
@@ -145,6 +151,10 @@ export function SearchInterface() {
             title={`No results found for "${query}"`}
             description="Try a different search term"
           />
+        )}
+
+        {!isSearching && currentSearch && currentResults.length > 0 && (
+          <RetrievalTrace search={currentSearch} corpora={corpora} />
         )}
 
         {!isSearching && currentResults.length > 0 && (

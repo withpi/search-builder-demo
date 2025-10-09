@@ -84,6 +84,59 @@ export function CorpusUploadDialog({ open, onOpenChange }: CorpusUploadDialogPro
             text: chunk.trim(),
           })
         })
+      } else if (file.name.endsWith(".csv")) {
+        const lines = text.split("\n").filter((line) => line.trim())
+
+        if (lines.length === 0) {
+          alert("CSV file is empty")
+          return
+        }
+
+        // Parse header row
+        const headers = lines[0].split(",").map((h) => h.trim().toLowerCase())
+
+        // Find column indices
+        const idIndex = headers.indexOf("id")
+        const textIndex = headers.indexOf("text")
+        const titleIndex = headers.indexOf("title")
+        const urlIndex = headers.indexOf("url")
+
+        if (textIndex === -1) {
+          alert("CSV must have a 'text' column")
+          return
+        }
+
+        // Parse data rows
+        lines.slice(1).forEach((line, idx) => {
+          if (!line.trim()) return
+
+          // Simple CSV parsing (handles basic cases)
+          const values: string[] = []
+          let currentValue = ""
+          let insideQuotes = false
+
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i]
+
+            if (char === '"') {
+              insideQuotes = !insideQuotes
+            } else if (char === "," && !insideQuotes) {
+              values.push(currentValue.trim())
+              currentValue = ""
+            } else {
+              currentValue += char
+            }
+          }
+          values.push(currentValue.trim())
+
+          // Create document from parsed values
+          documents.push({
+            id: idIndex >= 0 && values[idIndex] ? values[idIndex] : `doc-${idx}`,
+            text: values[textIndex] || "",
+            title: titleIndex >= 0 ? values[titleIndex] : undefined,
+            url: urlIndex >= 0 ? values[urlIndex] : undefined,
+          })
+        })
       }
 
       if (documents.length === 0) {
@@ -109,7 +162,8 @@ export function CorpusUploadDialog({ open, onOpenChange }: CorpusUploadDialogPro
         <DialogHeader>
           <DialogTitle className="text-foreground">Upload Custom Corpus</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Upload a JSON, JSONL, or TXT file containing your documents. Each document should have an id and text field.
+            Upload a JSON, JSONL, CSV, or TXT file containing your documents. Each document should have an id and text
+            field.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -133,7 +187,7 @@ export function CorpusUploadDialog({ open, onOpenChange }: CorpusUploadDialogPro
               <Input
                 id="file-upload"
                 type="file"
-                accept=".json,.jsonl,.txt"
+                accept=".json,.jsonl,.txt,.csv"
                 onChange={handleFileChange}
                 className="bg-secondary border-border text-foreground"
               />
@@ -150,6 +204,7 @@ export function CorpusUploadDialog({ open, onOpenChange }: CorpusUploadDialogPro
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>JSON: Array of objects with id, text, title (optional), url (optional)</li>
               <li>JSONL: One JSON object per line</li>
+              <li>CSV: Comma-separated values with headers (id, text, title, url)</li>
               <li>TXT: Plain text split by double newlines</li>
             </ul>
           </div>

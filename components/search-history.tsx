@@ -5,16 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Clock, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp } from "lucide-react"
+import { Clock, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react"
 import { format } from "date-fns"
 import { useState } from "react"
 import { SearchResults } from "./search-results"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { RetrievalTrace } from "./retrieval-trace"
 
 export function SearchHistory() {
-  const { searches, corpora } = useSearch()
+  const { searches, corpora, rubrics } = useSearch()
   const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null)
-  const [traceOpen, setTraceOpen] = useState(false)
 
   const selectedSearch = searches.find((s) => s.id === selectedSearchId)
 
@@ -34,51 +33,62 @@ export function SearchHistory() {
       <div className="lg:col-span-1">
         <h2 className="text-lg font-semibold text-foreground mb-4">Search History</h2>
         <ScrollArea className="h-[600px] pr-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             {searches.map((search) => {
               const corpus = corpora.find((c) => c.id === search.corpusId)
               const upvotes = search.results.filter((r) => r.rating === "up").length
               const downvotes = search.results.filter((r) => r.rating === "down").length
+              const rubric = search.rubricId ? rubrics.find((r) => r.id === search.rubricId) : null
 
               return (
                 <Card
                   key={search.id}
-                  className={`cursor-pointer transition-colors ${
+                  className={`cursor-pointer transition-all duration-200 ${
                     selectedSearchId === search.id
-                      ? "bg-accent border-accent-foreground/20"
-                      : "bg-card border-border hover:border-muted-foreground/50"
+                      ? "bg-accent border-primary shadow-md"
+                      : "bg-card border-border hover:border-muted-foreground/50 hover:shadow-sm"
                   }`}
                   onClick={() => setSelectedSearchId(search.id)}
                 >
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-foreground line-clamp-1">{search.query}</CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold text-foreground leading-tight">
+                      {search.query}
+                    </CardTitle>
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <Badge variant="outline" className="text-xs font-medium border-border/60">
                         {corpus?.name || "Unknown"}
                       </Badge>
-                      <Badge variant="secondary" className="text-xs uppercase">
+                      <Badge variant="secondary" className="text-xs font-medium uppercase tracking-wide">
                         {search.searchMode}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">{search.results.length} results</span>
+                      {rubric && (
+                        <Badge className="text-xs font-medium bg-blue-500 hover:bg-blue-600 gap-1">
+                          <Sparkles className="h-3 w-3" />
+                          {rubric.name}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-2 font-medium">
+                      {search.results.length} results
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(search.timestamp), "MMM d, h:mm a")}
+                  <CardContent className="pt-0 pb-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="font-medium">{format(new Date(search.timestamp), "MMM d, h:mm a")}</span>
                       </span>
                       {(upvotes > 0 || downvotes > 0) && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           {upvotes > 0 && (
-                            <span className="flex items-center gap-1 text-green-500">
-                              <ThumbsUp className="h-3 w-3" />
+                            <span className="flex items-center gap-1 text-green-600 font-medium">
+                              <ThumbsUp className="h-3.5 w-3.5 fill-green-600" />
                               {upvotes}
                             </span>
                           )}
                           {downvotes > 0 && (
-                            <span className="flex items-center gap-1 text-red-500">
-                              <ThumbsDown className="h-3 w-3" />
+                            <span className="flex items-center gap-1 text-red-600 font-medium">
+                              <ThumbsDown className="h-3.5 w-3.5 fill-red-600" />
                               {downvotes}
                             </span>
                           )}
@@ -109,106 +119,7 @@ export function SearchHistory() {
               </Button>
             </div>
 
-            <Collapsible open={traceOpen} onOpenChange={setTraceOpen}>
-              <Card className="bg-card border-border">
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium text-foreground">Retrieval Trace</CardTitle>
-                      {traceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Badge variant="secondary" className="uppercase">
-                        {selectedSearch.trace.mode}
-                      </Badge>
-                    </div>
-
-                    {selectedSearch.trace.keywordResults && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-2">Keyword (BM25) Results (Top 10)</h4>
-                        <div className="space-y-1 text-xs">
-                          {selectedSearch.trace.keywordResults.map((result) => {
-                            const doc = corpora
-                              .find((c) => c.id === selectedSearch.corpusId)
-                              ?.documents.find((d) => d.id === result.id)
-                            return (
-                              <div
-                                key={result.id}
-                                className="flex items-center justify-between py-1 border-b border-border/50"
-                              >
-                                <span className="text-muted-foreground">
-                                  #{result.rank} {doc?.title || doc?.id}
-                                </span>
-                                <span className="font-mono text-foreground">{result.score.toFixed(4)}</span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedSearch.trace.semanticResults && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-2">
-                          Semantic (TF-IDF) Results (Top 10)
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          {selectedSearch.trace.semanticResults.map((result) => {
-                            const doc = corpora
-                              .find((c) => c.id === selectedSearch.corpusId)
-                              ?.documents.find((d) => d.id === result.id)
-                            return (
-                              <div
-                                key={result.id}
-                                className="flex items-center justify-between py-1 border-b border-border/50"
-                              >
-                                <span className="text-muted-foreground">
-                                  #{result.rank} {doc?.title || doc?.id}
-                                </span>
-                                <span className="font-mono text-foreground">{result.score.toFixed(4)}</span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedSearch.trace.hybridResults && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-2">
-                          Hybrid (RRF) Results (k={selectedSearch.trace.rrfK})
-                        </h4>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Combined using Reciprocal Rank Fusion: RRF_score = sum(1 / (k + rank))
-                        </p>
-                        <div className="space-y-1 text-xs">
-                          {selectedSearch.trace.hybridResults.map((result) => {
-                            const doc = corpora
-                              .find((c) => c.id === selectedSearch.corpusId)
-                              ?.documents.find((d) => d.id === result.id)
-                            return (
-                              <div
-                                key={result.id}
-                                className="flex items-center justify-between py-1 border-b border-border/50"
-                              >
-                                <span className="text-muted-foreground">
-                                  #{result.rank} {doc?.title || doc?.id}
-                                </span>
-                                <span className="font-mono text-foreground">{result.score.toFixed(4)}</span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <RetrievalTrace search={selectedSearch} corpora={corpora} />
 
             <SearchResults results={selectedSearch.results} searchId={selectedSearch.id} />
           </div>
