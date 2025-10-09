@@ -551,21 +551,54 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         throw new SearchError("Rubric not found", "SEARCH_FAILED")
       }
 
+      console.log("[v0] Performing search with rubric:", {
+        rubricId: rubric.id,
+        rubricName: rubric.name,
+        criteriaCount: rubric.criteria.length,
+        criteria: rubric.criteria.map((c) => ({ label: c.label, question: c.question })),
+        weight,
+      })
+
       try {
         const { searchId, results: initialResults } = await performSearch(query, limit * 2)
 
         const scoredResults = await Promise.all(
-          initialResults.map(async (result) => {
+          initialResults.map(async (result, index) => {
             try {
+              console.log(`[v0] Scoring result ${index + 1}/${initialResults.length}:`, {
+                documentId: result.id,
+                documentTitle: result.title,
+                rubricId: rubric.id,
+                rubricName: rubric.name,
+              })
+
               const response = await scoreResult({
                 query,
                 text: result.text,
                 criteria: rubric.criteria,
               })
 
+              console.log(`[v0] Score response for result ${index + 1}:`, {
+                documentId: result.id,
+                documentTitle: result.title,
+                totalScore: response.total_score,
+                hasError: !!response.error,
+                error: response.error,
+              })
+
               const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
               const rubricScore = response.error ? 0 : (response.total_score ?? 0)
               const combinedScore = (1 - weight) * normalizedRetrievalScore + weight * rubricScore
+
+              console.log(`[v0] Combined score calculation for result ${index + 1}:`, {
+                documentId: result.id,
+                documentTitle: result.title,
+                retrievalScore: normalizedRetrievalScore,
+                rubricScore: rubricScore,
+                weight: weight,
+                combinedScore: combinedScore,
+                formula: `(1 - ${weight}) * ${normalizedRetrievalScore} + ${weight} * ${rubricScore} = ${combinedScore}`,
+              })
 
               return {
                 ...result,
