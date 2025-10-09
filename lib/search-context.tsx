@@ -552,12 +552,28 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         throw new SearchError("No active corpus selected", "NO_CORPUS")
       }
 
+      console.log("[v0] All rubrics in context:", {
+        totalRubrics: rubrics.length,
+        rubrics: rubrics.map((r) => ({
+          id: r.id,
+          name: r.name,
+          criteriaCount: r.criteria.length,
+          criteria: r.criteria.map((c) => ({ label: c.label, question: c.question })),
+        })),
+      })
+
+      console.log("[v0] Searching for rubric with ID:", rubricId)
+
       const rubric = rubrics.find((r) => r.id === rubricId)
       if (!rubric) {
+        console.error(
+          "[v0] Rubric not found! Available IDs:",
+          rubrics.map((r) => r.id),
+        )
         throw new SearchError("Rubric not found", "SEARCH_FAILED")
       }
 
-      console.log("[v0] Performing search with rubric:", {
+      console.log("[v0] Found rubric for search:", {
         rubricId: rubric.id,
         rubricName: rubric.name,
         criteriaCount: rubric.criteria.length,
