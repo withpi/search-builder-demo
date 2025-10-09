@@ -2,17 +2,19 @@
 
 import { useSearch } from "@/lib/search-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { RubricEditor } from "./rubric-editor"
-import { Clock, Sparkles } from "lucide-react"
+import { RubricGenerator } from "@/components/rubric/scorer_generator"
+import type { RubricExample } from "@/lib/rubric/rubricActions"
+import type PiClient from "withpi"
+import { Clock } from "lucide-react"
 import { format } from "date-fns"
 import { useState } from "react"
 
 export function RerankerTab() {
-  const { searches, corpora } = useSearch()
+  const { searches, corpora, ratedResults, addRubric } = useSearch()
   const [selectedSearchIds, setSelectedSearchIds] = useState<Set<string>>(new Set())
 
   const toggleSearchSelection = (searchId: string) => {
@@ -27,8 +29,41 @@ export function RerankerTab() {
     })
   }
 
-  const handleGenerateRubric = () => {
-    console.log("[v0] Generate rubric from searches:", Array.from(selectedSearchIds))
+  const selectedRatedResults = ratedResults.filter((r) => selectedSearchIds.has(r.searchId))
+
+  const validRatedResults = selectedRatedResults.filter((r) => {
+    return r && r.query && r.text && typeof r.query === "string" && typeof r.text === "string"
+  })
+
+  const goodExamples: RubricExample[] = validRatedResults
+    .filter((r) => r.rating === "up")
+    .map((r) => ({
+      llm_input: String(r.query),
+      llm_output: String(r.text),
+    }))
+
+  const badExamples: RubricExample[] = validRatedResults
+    .filter((r) => r.rating === "down")
+    .map((r) => ({
+      llm_input: String(r.query),
+      llm_output: String(r.text),
+    }))
+
+  const systemPrompt = "Search result relevance evaluator"
+
+  const handleApplyGeneratedRubric = async (dimensions: PiClient.Question[]) => {
+    const newRubric = {
+      id: `rubric-${Date.now()}`,
+      name: `Generated Rubric ${new Date().toLocaleDateString()}`,
+      criteria: dimensions.map((d) => ({
+        label: d.label || "Criterion",
+        question: d.question,
+      })),
+      createdAt: new Date(),
+      trainingCount: validRatedResults.length,
+    }
+
+    addRubric(newRubric)
   }
 
   return (
@@ -53,26 +88,29 @@ export function RerankerTab() {
       {/* Training Section */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-foreground">Training Data</CardTitle>
-            <Button
-              onClick={handleGenerateRubric}
-              disabled={selectedSearchIds.size === 0}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Generate Rubric
-            </Button>
-          </div>
+          <CardTitle className="text-lg font-semibold text-foreground">Training Data</CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
             Select searches to use as training data for rubric generation
           </p>
         </CardHeader>
         <CardContent>
-          <div className="border-2 border-dashed border-border rounded-lg p-8 mb-6 text-center">
-            <p className="text-muted-foreground">Rubric Generator</p>
-            <p className="text-xs text-muted-foreground mt-1">Component will be added here</p>
-          </div>
+          {validRatedResults.length > 0 ? (
+            <div className="mb-6">
+              <RubricGenerator
+                systemPrompt={systemPrompt}
+                goodExamples={goodExamples}
+                badExamples={badExamples}
+                applyRubric={handleApplyGeneratedRubric}
+              />
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-border rounded-lg p-8 mb-6 text-center">
+              <p className="text-muted-foreground">Rubric Generator</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select searches with rated results to generate a rubric
+              </p>
+            </div>
+          )}
 
           {searches.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">

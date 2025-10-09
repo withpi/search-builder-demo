@@ -12,10 +12,22 @@ import { EmptyState } from "./empty-state"
 import { ErrorBoundary } from "./error-boundary"
 import { SearchModeSelector } from "./search-mode-selector"
 import { ResultLimitSelector } from "./result-limit-selector"
+import { RubricSelector } from "./rubric-selector"
 import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
 
 export function SearchInterface() {
-  const { performSearch, activeCorpusId, corpora, searches, searchMode, setSearchMode } = useSearch()
+  const {
+    performSearch,
+    performSearchWithRubric,
+    activeCorpusId,
+    corpora,
+    searches,
+    searchMode,
+    setSearchMode,
+    rubrics,
+    activeRubricId,
+    setActiveRubric,
+  } = useSearch()
   const [query, setQuery] = useState("")
   const [resultLimit, setResultLimit] = useState(DEFAULT_RESULT_LIMIT.toString())
   const [isSearching, setIsSearching] = useState(false)
@@ -37,14 +49,16 @@ export function SearchInterface() {
     setCurrentSearchId(null)
 
     try {
-      const { searchId } = await performSearch(query, Number.parseInt(resultLimit))
+      const { searchId } = activeRubricId
+        ? await performSearchWithRubric(query, Number.parseInt(resultLimit), activeRubricId)
+        : await performSearch(query, Number.parseInt(resultLimit))
       setCurrentSearchId(searchId)
     } catch (error) {
       console.error("Search error:", error)
     } finally {
       setIsSearching(false)
     }
-  }, [canSearch, performSearch, query, resultLimit])
+  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -88,6 +102,12 @@ export function SearchInterface() {
                 <ResultLimitSelector
                   value={resultLimit}
                   onChange={setResultLimit}
+                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                />
+                <RubricSelector
+                  rubrics={rubrics}
+                  value={activeRubricId}
+                  onChange={setActiveRubric}
                   disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
                 />
               </div>

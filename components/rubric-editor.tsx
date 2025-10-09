@@ -1,78 +1,68 @@
 "use client"
 
+import { useState } from "react"
 import { useSearch } from "@/lib/search-context"
 import { Card } from "@/components/ui/card"
-import { RubricGenerator } from "@/components/rubric/scorer_generator"
-import type { RubricExample } from "@/lib/rubric/rubricActions"
-import type PiClient from "withpi"
+import { Button } from "@/components/ui/button"
+import { RubricCriteriaEditor } from "@/components/rubric-criteria-editor"
+import type { RubricCriterion } from "@/lib/types"
 
 export function RubricEditor() {
-  const { ratedResults, addRubric } = useSearch()
+  const { addRubric, rubrics } = useSearch()
+  const [criteria, setCriteria] = useState<RubricCriterion[]>([
+    { label: "Relevance", question: "Is the result relevant to the query?" },
+  ])
 
-  const validRatedResults = ratedResults.filter((r) => {
-    return r && r.query && r.text && typeof r.query === "string" && typeof r.text === "string"
-  })
+  const handleSaveRubric = () => {
+    if (criteria.length === 0) {
+      return
+    }
 
-  const goodExamples: RubricExample[] = validRatedResults
-    .filter((r) => r.rating === "up")
-    .map((r) => ({
-      llm_input: String(r.query),
-      llm_output: String(r.text),
-    }))
-
-  const badExamples: RubricExample[] = validRatedResults
-    .filter((r) => r.rating === "down")
-    .map((r) => ({
-      llm_input: String(r.query),
-      llm_output: String(r.text),
-    }))
-
-  const systemPrompt = "Search result relevance evaluator"
-
-  const handleApplyRubric = async (dimensions: PiClient.Question[]) => {
     const newRubric = {
       id: `rubric-${Date.now()}`,
-      name: `Generated Rubric ${new Date().toLocaleDateString()}`,
-      criteria: dimensions.map((d) => ({
-        label: d.label || "Criterion",
-        question: d.question,
-      })),
+      name: `Rubric v${rubrics.length}`,
+      criteria: criteria,
       createdAt: new Date(),
-      trainingCount: validRatedResults.length,
+      trainingCount: 0,
     }
 
     addRubric(newRubric)
+    setCriteria([{ label: "Relevance", question: "Is the result relevant to the query?" }])
   }
 
   return (
     <div className="space-y-6">
       <Card className="p-8 bg-card border-border shadow-sm">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-foreground mb-2">Rubric Generator</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-2">Rubric Editor</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Generate a Pi-powered rubric from your rated search results to capture your relevance preferences.
+              Create rubrics to evaluate search result quality using Pi Scorer
             </p>
           </div>
 
-          <div className="pt-2 text-sm text-muted-foreground text-center">
-            <p>
-              {validRatedResults.length} rated result{validRatedResults.length !== 1 ? "s" : ""} available
-              {goodExamples.length > 0 && <span className="text-green-600 ml-2">({goodExamples.length} relevant)</span>}
-              {badExamples.length > 0 && <span className="text-red-600 ml-2">({badExamples.length} irrelevant)</span>}
-            </p>
+          <div className="max-w-2xl mx-auto">
+            <RubricCriteriaEditor criteria={criteria} onUpdate={setCriteria} />
+            <div className="mt-4">
+              <Button onClick={handleSaveRubric} className="w-full" disabled={criteria.length === 0}>
+                Save Rubric
+              </Button>
+            </div>
           </div>
 
-          {validRatedResults.length > 0 ? (
-            <RubricGenerator
-              systemPrompt={systemPrompt}
-              goodExamples={goodExamples}
-              badExamples={badExamples}
-              applyRubric={handleApplyRubric}
-            />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Rate some search results in the Training tab to get started</p>
+          {rubrics.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-border">
+              <h4 className="text-sm font-medium text-foreground mb-3">Existing Rubrics ({rubrics.length})</h4>
+              <div className="space-y-2">
+                {rubrics.map((rubric) => (
+                  <div key={rubric.id} className="text-sm p-3 bg-muted rounded-lg">
+                    <div className="font-medium">{rubric.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {rubric.criteria.length} criteria • Created {rubric.createdAt.toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

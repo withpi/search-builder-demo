@@ -17,6 +17,7 @@ export interface SearchResult extends Document {
   score: number
   rating?: "up" | "down"
   piScore?: number
+  retrievalScore?: number // Add normalized retrieval score
 }
 
 export interface IndexingStep {
@@ -29,10 +30,12 @@ export type SearchTrace =
   | {
       mode: "keyword"
       keywordResults: Array<{ id: string; score: number; rank: number }>
+      rubricScoring?: RubricScoringTrace // Add rubric scoring info
     }
   | {
       mode: "semantic"
       semanticResults: Array<{ id: string; score: number; rank: number }>
+      rubricScoring?: RubricScoringTrace // Add rubric scoring info
     }
   | {
       mode: "hybrid"
@@ -40,7 +43,23 @@ export type SearchTrace =
       semanticResults: Array<{ id: string; score: number; rank: number }>
       hybridResults: Array<{ id: string; score: number; rank: number }>
       rrfK: number
+      rubricScoring?: RubricScoringTrace // Add rubric scoring info
     }
+
+export interface RubricScoringTrace {
+  rubricId: string
+  rubricName: string
+  criteriaCount: number
+  scoringMethod: "average" | "weighted"
+  resultsScored: number
+  topResults: Array<{
+    id: string
+    rank: number
+    retrievalScore: number
+    rubricScore: number
+    combinedScore: number
+  }>
+}
 
 export interface Search {
   id: string
@@ -50,6 +69,7 @@ export interface Search {
   corpusId: string
   searchMode: SearchMode
   trace: SearchTrace
+  rubricId?: string // Add rubric ID to search
 }
 
 export type SearchMode = "keyword" | "semantic" | "hybrid"

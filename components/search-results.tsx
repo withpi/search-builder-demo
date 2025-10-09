@@ -75,8 +75,18 @@ const ResultCard = memo(function ResultCard({ result, index, onRate }: ResultCar
             </CardTitle>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs font-semibold bg-primary/10 text-primary border-primary/20">
-                Score: {result.score.toFixed(2)}
+                Score: {result.score.toFixed(3)}
               </Badge>
+              {result.piScore !== undefined && (
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                  Rubric: {result.piScore.toFixed(3)}
+                </Badge>
+              )}
+              {result.retrievalScore !== undefined && (
+                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                  Retrieval: {result.retrievalScore.toFixed(3)}
+                </Badge>
+              )}
               <Badge variant="outline" className="text-xs">
                 #{index + 1}
               </Badge>

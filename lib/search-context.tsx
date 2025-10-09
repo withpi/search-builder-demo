@@ -34,6 +34,11 @@ interface SearchContextType {
   setActiveRubric: (id: string | null) => void
   getRatedResults: () => RatedResult[]
   performRerank: (query: string, limit: number, rubricId: string) => Promise<SearchResult[]>
+  performSearchWithRubric: (
+    query: string,
+    limit: number,
+    rubricId: string,
+  ) => Promise<{ searchId: string; results: SearchResult[] }>
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined)
@@ -133,7 +138,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
       const { asyncBufferFromUrl, parquetRead } = await import("hyparquet")
       const documents: Document[] = []
-      const MAX_DOCUMENTS = 5000
+      const MAX_DOCUMENTS = 1000
 
       for (let fileIndex = 0; fileIndex < parquetFiles.length && documents.length < MAX_DOCUMENTS; fileIndex++) {
         const parquetUrl = parquetFiles[fileIndex].url
@@ -516,6 +521,104 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     setActiveRubricId(id)
   }, [])
 
+  const normalizeScore = useCallback((score: number, mode: SearchMode): number => {
+    // BM25 scores are typically 0-10, semantic scores are already 0-1
+    if (mode === "keyword") {
+      // Normalize BM25 scores (typically 0-10) to 0-1
+      return Math.min(score / 10, 1)
+    } else if (mode === "semantic") {
+      // Cosine similarity is already 0-1
+      return score
+    } else {
+      // Hybrid RRF scores need normalization
+      // RRF scores are typically 0-0.1, scale to 0-1
+      return Math.min(score * 10, 1)
+    }
+  }, [])
+
+  const performSearchWithRubric = useCallback(
+    async (query: string, limit: number, rubricId: string): Promise<{ searchId: string; results: SearchResult[] }> => {
+      if (!activeCorpusId) {
+        throw new SearchError("No active corpus selected", "NO_CORPUS")
+      }
+
+      const rubric = rubrics.find((r) => r.id === rubricId)
+      if (!rubric) {
+        throw new SearchError("Rubric not found", "SEARCH_FAILED")
+      }
+
+      try {
+        // Step 1: Get initial search results (fetch more for reranking)
+        const { searchId, results: initialResults } = await performSearch(query, limit * 2)
+
+        // Step 2: Score each result with the rubric
+        const scoredResults = await Promise.all(
+          initialResults.map(async (result) => {
+            const response = await scoreResult({
+              query,
+              text: result.text,
+              criteria: rubric.criteria,
+            })
+
+            // Normalize retrieval score to 0-1
+            const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
+
+            // Combine scores (average of retrieval and rubric scores)
+            const combinedScore = (normalizedRetrievalScore + response.aggregate_score) / 2
+
+            return {
+              ...result,
+              piScore: response.aggregate_score,
+              retrievalScore: normalizedRetrievalScore,
+              score: combinedScore,
+            }
+          }),
+        )
+
+        // Step 3: Sort by combined score and take top results
+        const rerankedResults = scoredResults.sort((a, b) => b.score - a.score).slice(0, limit)
+
+        // Step 4: Update the search with rubric trace information
+        setSearches((prev) =>
+          prev.map((search) =>
+            search.id === searchId
+              ? {
+                  ...search,
+                  results: rerankedResults,
+                  rubricId,
+                  trace: {
+                    ...search.trace,
+                    rubricScoring: {
+                      rubricId,
+                      rubricName: rubric.name,
+                      criteriaCount: rubric.criteria.length,
+                      scoringMethod: "average",
+                      resultsScored: rerankedResults.length,
+                      topResults: rerankedResults.slice(0, 5).map((r, idx) => ({
+                        id: r.id,
+                        rank: idx + 1,
+                        retrievalScore: r.retrievalScore!,
+                        rubricScore: r.piScore!,
+                        combinedScore: r.score,
+                      })),
+                    },
+                  },
+                }
+              : search,
+          ),
+        )
+
+        return { searchId, results: rerankedResults }
+      } catch (error) {
+        console.error("[v0] Rubric-enhanced search failed:", error)
+        throw error instanceof SearchError
+          ? error
+          : new SearchError("Rubric-enhanced search failed", "SEARCH_FAILED", error)
+      }
+    },
+    [activeCorpusId, rubrics, performSearch, searchMode, normalizeScore],
+  )
+
   return (
     <SearchContext.Provider
       value={{
@@ -540,6 +643,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         setActiveRubric,
         getRatedResults,
         performRerank,
+        performSearchWithRubric,
       }}
     >
       {children}
