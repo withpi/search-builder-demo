@@ -9,7 +9,8 @@ export interface ScoreRequest {
 }
 
 export interface ScoreResponse {
-  aggregate_score: number
+  total_score: number
+  question_scores?: Array<{ label: string; score: number }>
   error?: string
 }
 
@@ -19,7 +20,7 @@ export async function scoreResult(request: ScoreRequest): Promise<ScoreResponse>
 
     if (!apiKey) {
       return {
-        aggregate_score: 0,
+        total_score: 0,
         error: "Pi API key not configured",
       }
     }
@@ -33,12 +34,13 @@ export async function scoreResult(request: ScoreRequest): Promise<ScoreResponse>
     })
 
     return {
-      aggregate_score: response.aggregate_score,
+      total_score: response.total_score ?? 0,
+      question_scores: response.question_scores,
     }
   } catch (error) {
     console.error("[v0] Error scoring result:", error)
     return {
-      aggregate_score: 0,
+      total_score: 0,
       error: error instanceof Error ? error.message : "Unknown error",
     }
   }
