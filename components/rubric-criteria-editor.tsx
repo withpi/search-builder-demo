@@ -11,9 +11,10 @@ import type { RubricCriterion } from "@/lib/types"
 interface RubricCriteriaEditorProps {
   criteria: RubricCriterion[]
   onUpdate: (criteria: RubricCriterion[]) => void
+  onBlur?: () => void // Add onBlur callback to trigger scoring
 }
 
-export function RubricCriteriaEditor({ criteria, onUpdate }: RubricCriteriaEditorProps) {
+export function RubricCriteriaEditor({ criteria, onUpdate, onBlur }: RubricCriteriaEditorProps) {
   const [editingCriteria, setEditingCriteria] = useState<RubricCriterion[]>(criteria)
 
   useEffect(() => {
@@ -34,6 +35,12 @@ export function RubricCriteriaEditor({ criteria, onUpdate }: RubricCriteriaEdito
     setEditingCriteria(updated)
     const validCriteria = updated.filter((c) => c.label.trim() && c.question.trim())
     onUpdate(validCriteria.length > 0 ? validCriteria : updated)
+  }
+
+  const handleBlur = () => {
+    if (onBlur) {
+      onBlur()
+    }
   }
 
   const handleAddCriterion = () => {
@@ -64,6 +71,7 @@ export function RubricCriteriaEditor({ criteria, onUpdate }: RubricCriteriaEdito
                       id={`label-${index}`}
                       value={criterion.label}
                       onChange={(e) => handleLabelChange(index, e.target.value)}
+                      onBlur={handleBlur}
                       placeholder="e.g., Relevance"
                       className="mt-1"
                     />
@@ -76,6 +84,7 @@ export function RubricCriteriaEditor({ criteria, onUpdate }: RubricCriteriaEdito
                       id={`question-${index}`}
                       value={criterion.question}
                       onChange={(e) => handleQuestionChange(index, e.target.value)}
+                      onBlur={handleBlur}
                       placeholder="e.g., How relevant is this result to the query?"
                       className="mt-1"
                     />

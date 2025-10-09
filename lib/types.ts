@@ -19,6 +19,7 @@ export interface SearchResult extends Document {
   piScore?: number
   retrievalScore?: number // Add normalized retrieval score
   questionScores?: Array<{ label: string; score: number }> // Add question scores to search results
+  originalRank?: number // Track original ranking position for manual reranking
 }
 
 export interface IndexingStep {
