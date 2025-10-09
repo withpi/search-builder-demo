@@ -52,6 +52,7 @@ export interface RubricScoringTrace {
   criteriaCount: number
   scoringMethod: "average" | "weighted"
   resultsScored: number
+  weight: number // Add weight parameter to trace
   topResults: Array<{
     id: string
     rank: number

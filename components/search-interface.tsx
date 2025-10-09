@@ -5,6 +5,7 @@ import { useState, useMemo, useCallback } from "react"
 import { useSearch } from "@/lib/search-context"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 import { Search, Loader2 } from "lucide-react"
 import { SearchResults } from "./search-results"
 import { SearchResultsSkeleton } from "./search-results-skeleton"
@@ -34,6 +35,7 @@ export function SearchInterface() {
   const [isSearching, setIsSearching] = useState(false)
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
+  const [rubricWeight, setRubricWeight] = useState(0.5)
 
   const activeCorpus = useMemo(() => corpora.find((c) => c.id === activeCorpusId), [corpora, activeCorpusId])
 
@@ -51,7 +53,7 @@ export function SearchInterface() {
 
     try {
       const { searchId } = activeRubricId
-        ? await performSearchWithRubric(query, Number.parseInt(resultLimit), activeRubricId)
+        ? await performSearchWithRubric(query, Number.parseInt(resultLimit), activeRubricId, rubricWeight)
         : await performSearch(query, Number.parseInt(resultLimit))
       setCurrentSearchId(searchId)
     } catch (error) {
@@ -59,7 +61,7 @@ export function SearchInterface() {
     } finally {
       setIsSearching(false)
     }
-  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId])
+  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId, rubricWeight])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -98,8 +100,8 @@ export function SearchInterface() {
               aria-label="Search query input"
             />
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1">
                 <SearchModeSelector
                   value={searchMode}
                   onChange={setSearchMode}
@@ -116,6 +118,25 @@ export function SearchInterface() {
                   onChange={setActiveRubric}
                   disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
                 />
+
+                {activeRubricId && (
+                  <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-lg border border-border flex-1 max-w-md">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Retrieval</span>
+                    <Slider
+                      value={[rubricWeight]}
+                      onValueChange={(value) => setRubricWeight(value[0])}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      className="flex-1"
+                      disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                    />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Rubric</span>
+                    <span className="text-xs font-medium text-foreground whitespace-nowrap ml-2">
+                      {Math.round((1 - rubricWeight) * 100)}% • {Math.round(rubricWeight * 100)}%
+                    </span>
+                  </div>
+                )}
               </div>
 
               <Button

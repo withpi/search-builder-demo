@@ -38,6 +38,7 @@ interface SearchContextType {
     query: string,
     limit: number,
     rubricId: string,
+    weight: number,
   ) => Promise<{ searchId: string; results: SearchResult[] }>
 }
 
@@ -535,7 +536,12 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const performSearchWithRubric = useCallback(
-    async (query: string, limit: number, rubricId: string): Promise<{ searchId: string; results: SearchResult[] }> => {
+    async (
+      query: string,
+      limit: number,
+      rubricId: string,
+      weight = 0.5,
+    ): Promise<{ searchId: string; results: SearchResult[] }> => {
       if (!activeCorpusId) {
         throw new SearchError("No active corpus selected", "NO_CORPUS")
       }
@@ -559,7 +565,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
               const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
               const rubricScore = response.error ? 0 : (response.total_score ?? 0)
-              const combinedScore = (normalizedRetrievalScore + rubricScore) / 2
+              const combinedScore = (1 - weight) * normalizedRetrievalScore + weight * rubricScore
 
               return {
                 ...result,
@@ -597,6 +603,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                       criteriaCount: rubric.criteria.length,
                       scoringMethod: "average",
                       resultsScored: rerankedResults.length,
+                      weight,
                       topResults: rerankedResults.slice(0, 5).map((r, idx) => ({
                         id: r.id,
                         rank: idx + 1,

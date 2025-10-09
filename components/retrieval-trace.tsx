@@ -118,14 +118,21 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                     <span className="text-muted-foreground">Results Scored:</span>
                     <span className="font-medium text-foreground">{search.trace.rubricScoring.resultsScored}</span>
                   </div>
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-muted-foreground">Score Weighting:</span>
+                    <span className="font-medium text-foreground">
+                      Retrieval: {Math.round((1 - search.trace.rubricScoring.weight) * 100)}% • Rubric:{" "}
+                      {Math.round(search.trace.rubricScoring.weight * 100)}%
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mt-3">
                   <h5 className="text-xs font-semibold text-foreground mb-2">All Rubric Scores</h5>
                   <div className="space-y-1 text-xs max-h-[300px] overflow-y-auto">
                     {search.results
-                      .filter((r) => r.rubricScore !== undefined)
-                      .sort((a, b) => (b.rubricScore || 0) - (a.rubricScore || 0))
+                      .filter((r) => r.piScore !== undefined)
+                      .sort((a, b) => (b.piScore || 0) - (a.piScore || 0))
                       .map((result, index) => {
                         const doc = corpora
                           .find((c) => c.id === search.corpusId)
@@ -138,7 +145,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                             <span className="text-muted-foreground">
                               #{index + 1} {doc?.title || doc?.id}
                             </span>
-                            <span className="font-mono text-foreground">{(result.rubricScore ?? 0).toFixed(4)}</span>
+                            <span className="font-mono text-foreground">{(result.piScore ?? 0).toFixed(4)}</span>
                           </div>
                         )
                       })}
@@ -148,7 +155,8 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                 <div className="mt-3">
                   <h5 className="text-xs font-semibold text-foreground mb-2">Top 5 Combined Results</h5>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Combined Score = (Retrieval Score + Rubric Score) / 2
+                    Combined Score = {(1 - search.trace.rubricScoring.weight).toFixed(2)} × Retrieval Score +{" "}
+                    {search.trace.rubricScoring.weight.toFixed(2)} × Rubric Score
                   </p>
                   <div className="space-y-1 text-xs">
                     {search.trace.rubricScoring.topResults.map((result) => {
