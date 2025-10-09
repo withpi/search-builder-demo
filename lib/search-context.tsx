@@ -174,8 +174,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
         file = null as any
 
-        updateLastStep("complete", `Parsed ${documents.length} total documents`)
-
         await new Promise((resolve) => setTimeout(resolve, 10))
 
         if (documents.length >= MAX_DOCUMENTS) {
@@ -518,9 +516,17 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     setActiveCorpusId(id)
   }, [])
 
-  const setActiveRubric = useCallback((id: string | null) => {
-    setActiveRubricId(id)
-  }, [])
+  const setActiveRubric = useCallback(
+    (id: string | null) => {
+      console.log("[v0] Setting active rubric:", {
+        previousId: activeRubricId,
+        newId: id,
+        rubricName: id ? rubrics.find((r) => r.id === id)?.name : "None",
+      })
+      setActiveRubricId(id)
+    },
+    [activeRubricId, rubrics],
+  )
 
   const normalizeScore = useCallback((score: number, mode: SearchMode): number => {
     if (score === undefined || score === null || isNaN(score)) {

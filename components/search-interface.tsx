@@ -47,6 +47,14 @@ export function SearchInterface() {
   const handleSearch = useCallback(async () => {
     if (!canSearch) return
 
+    console.log("[v0] Search initiated with:", {
+      query,
+      activeRubricId,
+      rubricName: activeRubricId ? rubrics.find((r) => r.id === activeRubricId)?.name : "None",
+      rubricWeight,
+      allRubrics: rubrics.map((r) => ({ id: r.id, name: r.name })),
+    })
+
     setHasSearched(true)
     setIsSearching(true)
     setCurrentSearchId(null)
@@ -61,7 +69,7 @@ export function SearchInterface() {
     } finally {
       setIsSearching(false)
     }
-  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId, rubricWeight])
+  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId, rubricWeight, rubrics])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
