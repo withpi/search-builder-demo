@@ -582,6 +582,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                 documentId: result.id,
                 documentTitle: result.title,
                 totalScore: response.total_score,
+                questionScores: response.question_scores,
                 hasError: !!response.error,
                 error: response.error,
               })
@@ -605,6 +606,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                 piScore: rubricScore,
                 retrievalScore: normalizedRetrievalScore,
                 score: combinedScore,
+                questionScores: response.question_scores,
               }
             } catch (error) {
               console.error("[v0] Error scoring result:", error)
@@ -643,6 +645,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                         retrievalScore: r.retrievalScore!,
                         rubricScore: r.piScore!,
                         combinedScore: r.score,
+                        questionScores: r.questionScores,
                       })),
                     },
                   },

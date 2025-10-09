@@ -18,6 +18,7 @@ export interface SearchResult extends Document {
   rating?: "up" | "down"
   piScore?: number
   retrievalScore?: number // Add normalized retrieval score
+  questionScores?: Array<{ label: string; score: number }> // Add question scores to search results
 }
 
 export interface IndexingStep {
@@ -59,6 +60,7 @@ export interface RubricScoringTrace {
     retrievalScore: number
     rubricScore: number
     combinedScore: number
+    questionScores?: Array<{ label: string; score: number }> // Add question scores to trace
   }>
 }
 

@@ -177,6 +177,20 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                             <span>Retrieval: {(result.retrievalScore ?? 0).toFixed(4)}</span>
                             <span>Rubric: {(result.rubricScore ?? 0).toFixed(4)}</span>
                           </div>
+                          {result.questionScores && result.questionScores.length > 0 && (
+                            <div className="pl-4 mt-2 space-y-1">
+                              <div className="text-[10px] font-semibold text-muted-foreground">Question Scores:</div>
+                              {result.questionScores.map((qs) => (
+                                <div
+                                  key={qs.label}
+                                  className="flex items-center justify-between text-[10px] text-muted-foreground"
+                                >
+                                  <span>{qs.label}:</span>
+                                  <span className="font-mono">{qs.score.toFixed(4)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )
                     })}
