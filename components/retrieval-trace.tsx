@@ -45,7 +45,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                         <span className="text-muted-foreground">
                           #{result.rank} {doc?.title || doc?.id}
                         </span>
-                        <span className="font-mono text-foreground">{result.score.toFixed(4)}</span>
+                        <span className="font-mono text-foreground">{(result.score ?? 0).toFixed(4)}</span>
                       </div>
                     )
                   })}
@@ -64,7 +64,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                         <span className="text-muted-foreground">
                           #{result.rank} {doc?.title || doc?.id}
                         </span>
-                        <span className="font-mono text-foreground">{result.score.toFixed(4)}</span>
+                        <span className="font-mono text-foreground">{(result.score ?? 0).toFixed(4)}</span>
                       </div>
                     )
                   })}
@@ -88,7 +88,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                         <span className="text-muted-foreground">
                           #{result.rank} {doc?.title || doc?.id}
                         </span>
-                        <span className="font-mono text-foreground">{result.score.toFixed(4)}</span>
+                        <span className="font-mono text-foreground">{(result.score ?? 0).toFixed(4)}</span>
                       </div>
                     )
                   })}
@@ -138,7 +138,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                             <span className="text-muted-foreground">
                               #{index + 1} {doc?.title || doc?.id}
                             </span>
-                            <span className="font-mono text-foreground">{(result.rubricScore || 0).toFixed(4)}</span>
+                            <span className="font-mono text-foreground">{(result.rubricScore ?? 0).toFixed(4)}</span>
                           </div>
                         )
                       })}
@@ -162,12 +162,12 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                               #{result.rank} {doc?.title || doc?.id}
                             </span>
                             <span className="font-mono text-foreground font-semibold">
-                              {result.combinedScore.toFixed(4)}
+                              {(result.combinedScore ?? 0).toFixed(4)}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground pl-4">
-                            <span>Retrieval: {result.retrievalScore.toFixed(4)}</span>
-                            <span>Rubric: {result.rubricScore.toFixed(4)}</span>
+                            <span>Retrieval: {(result.retrievalScore ?? 0).toFixed(4)}</span>
+                            <span>Rubric: {(result.rubricScore ?? 0).toFixed(4)}</span>
                           </div>
                         </div>
                       )

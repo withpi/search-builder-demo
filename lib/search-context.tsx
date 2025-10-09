@@ -554,23 +554,38 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         // Step 2: Score each result with the rubric
         const scoredResults = await Promise.all(
           initialResults.map(async (result) => {
-            const response = await scoreResult({
-              query,
-              text: result.text,
-              criteria: rubric.criteria,
-            })
+            try {
+              const response = await scoreResult({
+                query,
+                text: result.text,
+                criteria: rubric.criteria,
+              })
 
-            // Normalize retrieval score to 0-1
-            const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
+              // Normalize retrieval score to 0-1
+              const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
 
-            // Combine scores (average of retrieval and rubric scores)
-            const combinedScore = (normalizedRetrievalScore + response.aggregate_score) / 2
+              // Use 0 if rubric scoring failed
+              const rubricScore = response.error ? 0 : response.aggregate_score
 
-            return {
-              ...result,
-              piScore: response.aggregate_score,
-              retrievalScore: normalizedRetrievalScore,
-              score: combinedScore,
+              // Combine scores (average of retrieval and rubric scores)
+              const combinedScore = (normalizedRetrievalScore + rubricScore) / 2
+
+              return {
+                ...result,
+                piScore: rubricScore,
+                retrievalScore: normalizedRetrievalScore,
+                score: combinedScore,
+              }
+            } catch (error) {
+              console.error("[v0] Error scoring result:", error)
+              // If scoring fails, use retrieval score only
+              const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
+              return {
+                ...result,
+                piScore: 0,
+                retrievalScore: normalizedRetrievalScore,
+                score: normalizedRetrievalScore,
+              }
             }
           }),
         )
