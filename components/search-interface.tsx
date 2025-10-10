@@ -121,7 +121,7 @@ export function SearchInterface() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-              className="text-base h-14 pr-16"
+              className="text-base h-14 pr-16 bg-white text-foreground"
             />
             <Button
               onClick={handleSearch}
