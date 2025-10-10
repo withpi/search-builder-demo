@@ -19,6 +19,14 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
   } | null>(null)
 
   const buildRubricIndex = useCallback(async (rubric: Rubric, corpus: Corpus): Promise<RubricIndex> => {
+    console.log("[v0] Building rubric index:", {
+      rubricId: rubric.id,
+      rubricName: rubric.name,
+      corpusId: corpus.id,
+      corpusName: corpus.name,
+      totalDocuments: corpus.documents.length,
+    })
+
     const scores = new Map<string, { totalScore: number; questionScores: Array<{ label: string; score: number }> }>()
 
     const BATCH_SIZE = 50
@@ -27,6 +35,13 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
     for (let i = 0; i < totalDocs; i += BATCH_SIZE) {
       const batchEnd = Math.min(i + BATCH_SIZE, totalDocs)
       const batch = corpus.documents.slice(i, batchEnd)
+
+      console.log("[v0] Processing batch:", {
+        batchStart: i,
+        batchEnd,
+        batchSize: batch.length,
+        progress: `${batchEnd}/${totalDocs}`,
+      })
 
       const batchResults = await Promise.all(
         batch.map(async (doc) => {
@@ -43,6 +58,10 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
               questionScores: response.question_scores || [],
             }
           } catch (error) {
+            console.error("[v0] Error scoring document:", {
+              docId: doc.id,
+              error: error instanceof Error ? error.message : String(error),
+            })
             return {
               docId: doc.id,
               totalScore: 0,
@@ -68,6 +87,13 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
+    console.log("[v0] Rubric index built successfully:", {
+      rubricId: rubric.id,
+      corpusId: corpus.id,
+      totalDocuments: totalDocs,
+      scoresCount: scores.size,
+    })
+
     return {
       rubricId: rubric.id,
       corpusId: corpus.id,
@@ -79,6 +105,12 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
 
   const indexRubric = useCallback(
     async (rubric: Rubric) => {
+      console.log("[v0] Starting rubric indexing:", {
+        rubricId: rubric.id,
+        rubricName: rubric.name,
+        totalCorpora: corpora.filter((c) => c.isReady && c.documents.length > 0).length,
+      })
+
       setIndexingRubrics((prev) => new Set(prev).add(rubric.id))
       setIndexingProgress(null)
 
@@ -114,11 +146,23 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
           })
         }
 
+        console.log("[v0] Rubric indexing completed successfully:", {
+          rubricId: rubric.id,
+          rubricName: rubric.name,
+          corporaIndexed: totalCorpora,
+        })
+
         toast.success(`Index complete for "${rubric.name}"`, {
           id: toastId,
           description: `${totalCorpora} ${totalCorpora === 1 ? "corpus" : "corpora"} indexed successfully`,
         })
       } catch (error) {
+        console.error("[v0] Rubric indexing failed:", {
+          rubricId: rubric.id,
+          rubricName: rubric.name,
+          error: error instanceof Error ? error.message : String(error),
+        })
+
         toast.error(`Failed to build index for "${rubric.name}"`, {
           id: toastId,
           description: error instanceof Error ? error.message : "Unknown error occurred",
