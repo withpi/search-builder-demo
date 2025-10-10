@@ -112,34 +112,36 @@ export function SearchHistory() {
       </div>
 
       {/* Selected Search Details */}
-      <ScrollArea className="lg:col-span-2 max-h-[calc(100vh-250px)]">
-        {selectedSearch ? (
-          <div className="space-y-4 pr-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{selectedSearch.query}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(selectedSearch.timestamp), "MMMM d, yyyy 'at' h:mm a")}
-                </p>
+      <div className="lg:col-span-2">
+        <ScrollArea className="h-[calc(100vh-250px)]">
+          {selectedSearch ? (
+            <div className="space-y-4 pr-4 pb-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">{selectedSearch.query}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {format(new Date(selectedSearch.timestamp), "MMMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setSelectedSearchId(null)} className="border-border">
+                  Close
+                </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setSelectedSearchId(null)} className="border-border">
-                Close
-              </Button>
-            </div>
 
-            <RetrievalTrace search={selectedSearch} corpora={corpora} />
+              <RetrievalTrace search={selectedSearch} corpora={corpora} />
 
-            <SearchResults results={selectedSearch.results} searchId={selectedSearch.id} />
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-            <div className="text-center">
-              <p className="text-lg">Select a search to view details</p>
-              <p className="text-sm mt-2">Click on any search from the history</p>
+              <SearchResults results={selectedSearch.results} searchId={selectedSearch.id} />
             </div>
-          </div>
-        )}
-      </ScrollArea>
+          ) : (
+            <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+              <div className="text-center">
+                <p className="text-lg">Select a search to view details</p>
+                <p className="text-sm mt-2">Click on any search from the history</p>
+              </div>
+            </div>
+          )}
+        </ScrollArea>
+      </div>
     </div>
   )
 }
