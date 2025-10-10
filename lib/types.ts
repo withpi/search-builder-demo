@@ -20,6 +20,7 @@ export interface SearchResult extends Document {
   retrievalScore?: number // Add normalized retrieval score
   questionScores?: Array<{ label: string; score: number }> // Add question scores to search results
   originalRank?: number // Track original ranking position for manual reranking
+  manualRank?: number // Track manual ranking position
 }
 
 export interface IndexingStep {
@@ -113,6 +114,14 @@ export interface Rubric {
   trainingCount: number
 }
 
+export interface RubricIndex {
+  rubricId: string
+  corpusId: string
+  scores: Map<string, { totalScore: number; questionScores: Array<{ label: string; score: number }> }> // documentId -> scores
+  createdAt: Date
+  documentCount: number
+}
+
 export interface RatedResult {
   searchId: string
   resultId: string
@@ -121,6 +130,8 @@ export interface RatedResult {
   title?: string
   rating: "up" | "down"
   timestamp: Date
+  manualRank?: number // Include manual ranking in rated results
+  originalRank?: number // Include original ranking for comparison
 }
 
 export type RerankerMode = "training" | "rubric" | "rerank"

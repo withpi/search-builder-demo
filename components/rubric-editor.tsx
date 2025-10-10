@@ -1,12 +1,11 @@
 "use client"
-
-import { useState, useEffect, useCallback } from "react"
 import { useSearch } from "@/lib/search-context"
+import { useRubric } from "@/lib/rubric-context"
+import { useRubricEditor } from "@/lib/hooks/use-rubric-editor"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RubricCriteriaEditor } from "@/components/rubric-criteria-editor"
-import { scoreResult } from "@/app/actions/score-results"
-import type { RubricCriterion, Document } from "@/lib/types"
+import type { Document } from "@/lib/types"
 import { Loader2 } from "lucide-react"
 
 interface ScoredExample {
@@ -17,98 +16,24 @@ interface ScoredExample {
 }
 
 export function RubricEditor() {
-  const { addRubric, rubrics, corpora, activeCorpusId } = useSearch()
-  const [criteria, setCriteria] = useState<RubricCriterion[]>([
-    { label: "Relevance", question: "Is the result relevant to the query?" },
-  ])
-  const [examples, setExamples] = useState<ScoredExample[]>([])
-  const [isLoadingExamples, setIsLoadingExamples] = useState(false)
+  const { corpora, activeCorpusId } = useSearch()
+  const { addRubric, rubrics, isIndexing } = useRubric()
 
-  useEffect(() => {
-    const loadExamples = () => {
-      if (!activeCorpusId) return
-
-      const corpus = corpora.find((c) => c.id === activeCorpusId)
-      if (!corpus || !corpus.isReady || corpus.documents.length === 0) return
-
-      setIsLoadingExamples(true)
-
-      // Sample 5 random documents
-      const shuffled = [...corpus.documents].sort(() => Math.random() - 0.5)
-      const sampled = shuffled.slice(0, 5)
-
-      setExamples(
-        sampled.map((doc) => ({
-          document: doc,
-          totalScore: 0,
-          questionScores: [],
-          isScoring: false,
-        })),
-      )
-
-      setIsLoadingExamples(false)
-    }
-
-    loadExamples()
-  }, [activeCorpusId, corpora])
-
-  const scoreExamples = useCallback(async () => {
-    if (criteria.length === 0 || criteria.some((c) => !c.label.trim() || !c.question.trim())) {
-      return
-    }
-
-    // Mark all examples as scoring
-    setExamples((prev) => prev.map((ex) => ({ ...ex, isScoring: true })))
-
-    // Score each example
-    const scoredExamples = await Promise.all(
-      examples.map(async (example) => {
-        try {
-          const response = await scoreResult({
-            query: "example query",
-            text: example.document.text,
-            criteria: criteria,
-          })
-
-          return {
-            ...example,
-            totalScore: response.error ? 0 : (response.total_score ?? 0),
-            questionScores: response.question_scores || [],
-            isScoring: false,
-          }
-        } catch (error) {
-          console.error("[v0] Error scoring example:", error)
-          return {
-            ...example,
-            totalScore: 0,
-            questionScores: [],
-            isScoring: false,
-          }
-        }
-      }),
-    )
-
-    const sortedExamples = scoredExamples.sort((a, b) => b.totalScore - a.totalScore)
-
-    setExamples(sortedExamples)
-  }, [criteria, examples])
-
-  const handleSaveRubric = () => {
-    if (criteria.length === 0) {
-      return
-    }
-
-    const newRubric = {
-      id: `rubric-${Date.now()}`,
-      name: `Rubric v${rubrics.length}`,
-      criteria: criteria,
-      createdAt: new Date(),
-      trainingCount: 0,
-    }
-
-    addRubric(newRubric)
-    setCriteria([{ label: "Relevance", question: "Is the result relevant to the query?" }])
-  }
+  const {
+    criteria,
+    setCriteria,
+    editingRubricId,
+    examples,
+    isLoadingExamples,
+    scoreExamples,
+    handleSaveRubric,
+    handleLoadRubric,
+  } = useRubricEditor({
+    activeCorpusId,
+    corpora,
+    rubrics,
+    onSaveRubric: addRubric,
+  })
 
   return (
     <div className="space-y-6">
@@ -119,14 +44,26 @@ export function RubricEditor() {
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               Create rubrics to evaluate search result quality using Pi Scorer
             </p>
+            {editingRubricId && (
+              <p className="text-sm font-medium text-primary mt-2">
+                Editing: {rubrics.find((r) => r.id === editingRubricId)?.name}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-foreground">Criteria</h4>
               <RubricCriteriaEditor criteria={criteria} onUpdate={setCriteria} onBlur={scoreExamples} />
-              <Button onClick={handleSaveRubric} className="w-full" disabled={criteria.length === 0}>
-                Save Rubric
+              <Button onClick={handleSaveRubric} className="w-full" disabled={criteria.length === 0 || isIndexing}>
+                {isIndexing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Building Index...
+                  </>
+                ) : (
+                  "Save Rubric"
+                )}
               </Button>
             </div>
 
@@ -142,7 +79,7 @@ export function RubricEditor() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {examples.map((example, idx) => (
+                  {examples.map((example) => (
                     <Card key={example.document.id} className="p-4 bg-muted/50">
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
@@ -186,22 +123,6 @@ export function RubricEditor() {
               )}
             </div>
           </div>
-
-          {rubrics.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-border">
-              <h4 className="text-sm font-medium text-foreground mb-3">Existing Rubrics ({rubrics.length})</h4>
-              <div className="space-y-2">
-                {rubrics.map((rubric) => (
-                  <div key={rubric.id} className="text-sm p-3 bg-muted rounded-lg">
-                    <div className="font-medium">{rubric.name}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {rubric.criteria.length} criteria • Created {rubric.createdAt.toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </Card>
     </div>

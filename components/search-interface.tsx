@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useMemo, useCallback } from "react"
 import { useSearch } from "@/lib/search-context"
+import { useRubric } from "@/lib/rubric-context"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -18,18 +19,11 @@ import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
 import { RetrievalTrace } from "./retrieval-trace"
 
 export function SearchInterface() {
-  const {
-    performSearch,
-    performSearchWithRubric,
-    activeCorpusId,
-    corpora,
-    searches,
-    searchMode,
-    setSearchMode,
-    rubrics,
-    activeRubricId,
-    setActiveRubric,
-  } = useSearch()
+  const { performSearch, performSearchWithRubric, activeCorpusId, corpora, searches, searchMode, setSearchMode } =
+    useSearch()
+
+  const { rubrics, activeRubricId, setActiveRubric, indexingRubrics, getRubricById, getIndexForRubric } = useRubric()
+
   const [query, setQuery] = useState("")
   const [resultLimit, setResultLimit] = useState(DEFAULT_RESULT_LIMIT.toString())
   const [isSearching, setIsSearching] = useState(false)
@@ -47,29 +41,46 @@ export function SearchInterface() {
   const handleSearch = useCallback(async () => {
     if (!canSearch) return
 
-    console.log("[v0] Search initiated with:", {
-      query,
-      activeRubricId,
-      rubricName: activeRubricId ? rubrics.find((r) => r.id === activeRubricId)?.name : "None",
-      rubricWeight,
-      allRubrics: rubrics.map((r) => ({ id: r.id, name: r.name })),
-    })
-
     setHasSearched(true)
     setIsSearching(true)
     setCurrentSearchId(null)
 
     try {
-      const { searchId } = activeRubricId
-        ? await performSearchWithRubric(query, Number.parseInt(resultLimit), activeRubricId, rubricWeight)
-        : await performSearch(query, Number.parseInt(resultLimit))
-      setCurrentSearchId(searchId)
+      if (activeRubricId) {
+        const rubric = getRubricById(activeRubricId)
+        const index = activeCorpusId ? getIndexForRubric(activeRubricId, activeCorpusId) : undefined
+
+        if (rubric) {
+          const { searchId } = await performSearchWithRubric(
+            query,
+            Number.parseInt(resultLimit),
+            rubric,
+            index,
+            rubricWeight,
+          )
+          setCurrentSearchId(searchId)
+        }
+      } else {
+        const { searchId } = await performSearch(query, Number.parseInt(resultLimit))
+        setCurrentSearchId(searchId)
+      }
     } catch (error) {
       console.error("Search error:", error)
     } finally {
       setIsSearching(false)
     }
-  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId, rubricWeight, rubrics])
+  }, [
+    canSearch,
+    performSearch,
+    performSearchWithRubric,
+    query,
+    resultLimit,
+    activeRubricId,
+    activeCorpusId,
+    rubricWeight,
+    getRubricById,
+    getIndexForRubric,
+  ])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -89,7 +100,9 @@ export function SearchInterface() {
 
   const currentSearch = useMemo(() => {
     if (!currentSearchId) return null
-    return searches.find((s) => s.id === currentSearchId) || null
+    const search = searches.find((s) => s.id === currentSearchId)
+
+    return search || null
   }, [currentSearchId, searches])
 
   return (
@@ -125,6 +138,7 @@ export function SearchInterface() {
                   value={activeRubricId}
                   onChange={setActiveRubric}
                   disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                  indexingRubrics={indexingRubrics}
                 />
 
                 {activeRubricId && (

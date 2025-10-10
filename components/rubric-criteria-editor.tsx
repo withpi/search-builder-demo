@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Trash2, Plus } from "lucide-react"
@@ -11,7 +12,7 @@ import type { RubricCriterion } from "@/lib/types"
 interface RubricCriteriaEditorProps {
   criteria: RubricCriterion[]
   onUpdate: (criteria: RubricCriterion[]) => void
-  onBlur?: () => void // Add onBlur callback to trigger scoring
+  onBlur?: () => void
 }
 
 export function RubricCriteriaEditor({ criteria, onUpdate, onBlur }: RubricCriteriaEditorProps) {
@@ -80,13 +81,14 @@ export function RubricCriteriaEditor({ criteria, onUpdate, onBlur }: RubricCrite
                     <Label htmlFor={`question-${index}`} className="text-sm font-medium">
                       Question
                     </Label>
-                    <Input
+                    <Textarea
                       id={`question-${index}`}
                       value={criterion.question}
                       onChange={(e) => handleQuestionChange(index, e.target.value)}
                       onBlur={handleBlur}
                       placeholder="e.g., How relevant is this result to the query?"
-                      className="mt-1"
+                      className="mt-1 resize-none"
+                      rows={2}
                     />
                   </div>
                 </div>

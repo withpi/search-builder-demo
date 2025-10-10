@@ -1,16 +1,23 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
-import type { Corpus, Document, SearchResult, Search, SearchMode, IndexingStep, Rubric, RatedResult } from "./types"
+import type {
+  Corpus,
+  Document,
+  SearchResult,
+  Search,
+  SearchMode,
+  IndexingStep,
+  RatedResult,
+  Rubric,
+  RubricIndex,
+} from "./types"
 import { SearchError, CorpusError } from "./types"
-import {
-  type TFIDFVectorizer,
-  indexDocumentsWithBM25,
-  generateTFIDFVectors,
-  performSemanticSearch,
-} from "./search-algorithms"
-import { reciprocalRankFusion } from "./search-utils"
+import { type TFIDFVectorizer, indexDocumentsWithBM25, generateTFIDFVectors } from "./search-algorithms"
 import { scoreResult } from "@/app/actions/score-results"
+import { normalizeScore, combineScores } from "./score-normalization"
+import { arrayMove } from "./array-utils"
+import { SearchStrategyFactory } from "./search-strategies"
 
 interface SearchContextType {
   corpora: Corpus[]
@@ -19,27 +26,21 @@ interface SearchContextType {
   isLoadingDefault: boolean
   indexingSteps: IndexingStep[]
   searchMode: SearchMode
-  rubrics: Rubric[]
-  activeRubricId: string | null
   ratedResults: RatedResult[]
-  isReranking: boolean
   setSearchMode: (mode: SearchMode) => void
   setActiveCorpus: (id: string) => void
   addCorpus: (name: string, documents: Document[]) => Promise<void>
   performSearch: (query: string, limit: number) => Promise<{ searchId: string; results: SearchResult[] }>
   rateResult: (searchId: string, resultId: string, rating: "up" | "down") => void
-  addRubric: (rubric: Rubric) => void
-  updateRubric: (id: string, rubric: Partial<Rubric>) => void
-  deleteRubric: (id: string) => void
-  setActiveRubric: (id: string | null) => void
   getRatedResults: () => RatedResult[]
-  performRerank: (query: string, limit: number, rubricId: string) => Promise<SearchResult[]>
   performSearchWithRubric: (
     query: string,
     limit: number,
-    rubricId: string,
+    rubric: Rubric,
+    index: RubricIndex | undefined,
     weight: number,
   ) => Promise<{ searchId: string; results: SearchResult[] }>
+  updateResultRanking: (searchId: string, resultId: string, newRank: number, originalRank: number) => void
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined)
@@ -51,11 +52,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [isLoadingDefault, setIsLoadingDefault] = useState(true)
   const [indexingSteps, setIndexingSteps] = useState<IndexingStep[]>([])
   const [searchMode, setSearchMode] = useState<SearchMode>("hybrid")
-
-  const [rubrics, setRubrics] = useState<Rubric[]>([])
-  const [activeRubricId, setActiveRubricId] = useState<string | null>(null)
   const [ratedResults, setRatedResults] = useState<RatedResult[]>([])
-  const [isReranking, setIsReranking] = useState(false)
 
   const searchEnginesRef = useRef<Map<string, any>>(new Map())
   const tfidfVectorizersRef = useRef<Map<string, TFIDFVectorizer>>(new Map())
@@ -205,7 +202,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
       searchEnginesRef.current.set("default", engine)
     } catch (error) {
-      console.error("[v0] Error loading default corpus:", error)
+      console.error("Error loading default corpus:", error)
       updateLastStep("error", error instanceof Error ? error.message : "Unknown error")
     } finally {
       setIsLoadingDefault(false)
@@ -234,7 +231,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
         searchEnginesRef.current.set(id, engine)
       } catch (error) {
-        console.error("[v0] Error adding corpus:", error)
+        console.error("Error adding corpus:", error)
         setCorpora((prev) => prev.filter((c) => c.id !== id))
         throw error
       }
@@ -259,143 +256,38 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       }
 
       const searchId = `search-${Date.now()}`
-      let finalResults: Array<{ id: string; score: number }> = []
 
       try {
-        if (searchMode === "keyword") {
-          const engine = searchEnginesRef.current.get(activeCorpusId)
-          if (!engine) {
-            throw new SearchError("Search engine not initialized", "SEARCH_FAILED")
-          }
+        const strategy = SearchStrategyFactory.getStrategy(searchMode)
 
-          const keywordResults = engine.search(query, limit)
-          const keywordFormatted = keywordResults.map((result: any) => ({
-            id: corpus.documents[result[0]].id,
-            score: result[1],
-          }))
-
-          finalResults = keywordFormatted
-
-          const trace = {
-            mode: "keyword" as const,
-            keywordResults: keywordFormatted.slice(0, 10).map((r, idx) => ({
-              ...r,
-              rank: idx + 1,
-            })),
-          }
-
-          const searchResults: SearchResult[] = finalResults.slice(0, limit).map((result) => {
-            const doc = corpus.documents.find((d) => d.id === result.id)!
-            return { ...doc, score: result.score }
-          })
-
-          const search: Search = {
-            id: searchId,
-            query,
-            timestamp: new Date(),
-            results: searchResults,
-            corpusId: activeCorpusId,
-            searchMode,
-            trace,
-          }
-
-          setSearches((prev) => [search, ...prev])
-          return { searchId, results: searchResults }
-        } else if (searchMode === "semantic") {
-          const vectorizer = tfidfVectorizersRef.current.get(activeCorpusId)
-          const vectors = tfidfVectorsRef.current.get(activeCorpusId)
-
-          if (!vectorizer || !vectors) {
-            throw new SearchError("TF-IDF vectors not initialized", "SEARCH_FAILED")
-          }
-
-          const documentIds = corpus.documents.map((d) => d.id)
-          finalResults = performSemanticSearch(query, vectorizer, vectors, documentIds, limit)
-
-          const trace = {
-            mode: "semantic" as const,
-            semanticResults: finalResults.slice(0, 10).map((r, idx) => ({
-              ...r,
-              rank: idx + 1,
-            })),
-          }
-
-          const searchResults: SearchResult[] = finalResults.slice(0, limit).map((result) => {
-            const doc = corpus.documents.find((d) => d.id === result.id)!
-            return { ...doc, score: result.score }
-          })
-
-          const search: Search = {
-            id: searchId,
-            query,
-            timestamp: new Date(),
-            results: searchResults,
-            corpusId: activeCorpusId,
-            searchMode,
-            trace,
-          }
-
-          setSearches((prev) => [search, ...prev])
-          return { searchId, results: searchResults }
-        } else {
-          // Hybrid mode
-          const engine = searchEnginesRef.current.get(activeCorpusId)
-          const vectorizer = tfidfVectorizersRef.current.get(activeCorpusId)
-          const vectors = tfidfVectorsRef.current.get(activeCorpusId)
-
-          if (!engine || !vectorizer || !vectors) {
-            throw new SearchError("Search engines not initialized", "SEARCH_FAILED")
-          }
-
-          const keywordResults = engine.search(query, limit)
-          const keywordFormatted = keywordResults.map((result: any) => ({
-            id: corpus.documents[result[0]].id,
-            score: result[1],
-          }))
-
-          const documentIds = corpus.documents.map((d) => d.id)
-          const semanticResults = performSemanticSearch(query, vectorizer, vectors, documentIds, limit)
-
-          const rrfK = 60
-          finalResults = reciprocalRankFusion(keywordFormatted, semanticResults, rrfK)
-
-          const trace = {
-            mode: "hybrid" as const,
-            keywordResults: keywordFormatted.slice(0, 10).map((r, idx) => ({
-              ...r,
-              rank: idx + 1,
-            })),
-            semanticResults: semanticResults.slice(0, 10).map((r, idx) => ({
-              ...r,
-              rank: idx + 1,
-            })),
-            hybridResults: finalResults.slice(0, 10).map((r, idx) => ({
-              ...r,
-              rank: idx + 1,
-            })),
-            rrfK,
-          }
-
-          const searchResults: SearchResult[] = finalResults.slice(0, limit).map((result) => {
-            const doc = corpus.documents.find((d) => d.id === result.id)!
-            return { ...doc, score: result.score }
-          })
-
-          const search: Search = {
-            id: searchId,
-            query,
-            timestamp: new Date(),
-            results: searchResults,
-            corpusId: activeCorpusId,
-            searchMode,
-            trace,
-          }
-
-          setSearches((prev) => [search, ...prev])
-          return { searchId, results: searchResults }
+        const engines = {
+          bm25: searchEnginesRef.current.get(activeCorpusId),
+          vectorizer: tfidfVectorizersRef.current.get(activeCorpusId),
+          vectors: tfidfVectorsRef.current.get(activeCorpusId),
         }
+
+        const { results: finalResults, trace } = strategy.execute(query, limit, corpus, engines)
+
+        const searchResults: SearchResult[] = finalResults.slice(0, limit).map((result) => {
+          const doc = corpus.documents.find((d) => d.id === result.id)!
+          return { ...doc, score: result.score }
+        })
+
+        const search: Search = {
+          id: searchId,
+          query,
+          timestamp: new Date(),
+          results: searchResults,
+          corpusId: activeCorpusId,
+          searchMode,
+          trace,
+        }
+
+        setSearches((prev) => [search, ...prev])
+
+        return { searchId, results: searchResults }
       } catch (error) {
-        console.error("[v0] Search failed:", error)
+        console.error("Search failed:", error)
         throw error instanceof SearchError ? error : new SearchError("Search operation failed", "SEARCH_FAILED", error)
       }
     },
@@ -427,6 +319,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           title: result.title,
           rating,
           timestamp: new Date(),
+          manualRank: result.manualRank,
+          originalRank: result.originalRank,
         }
 
         setRatedResults((prev) => {
@@ -443,205 +337,80 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     [searches],
   )
 
-  const addRubric = useCallback((rubric: Rubric) => {
-    setRubrics((prev) => [...prev, rubric])
-  }, [])
-
-  const updateRubric = useCallback((id: string, updates: Partial<Rubric>) => {
-    setRubrics((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)))
-  }, [])
-
-  const deleteRubric = useCallback(
-    (id: string) => {
-      setRubrics((prev) => prev.filter((r) => r.id !== id))
-      if (activeRubricId === id) {
-        setActiveRubricId(null)
-      }
-    },
-    [activeRubricId],
-  )
-
   const getRatedResults = useCallback(() => {
     return ratedResults
   }, [ratedResults])
 
-  const performRerank = useCallback(
-    async (query: string, limit: number, rubricId: string): Promise<SearchResult[]> => {
-      if (!activeCorpusId) {
-        throw new SearchError("No active corpus selected", "NO_CORPUS")
-      }
-
-      const rubric = rubrics.find((r) => r.id === rubricId)
-      if (!rubric) {
-        throw new SearchError("Rubric not found", "SEARCH_FAILED")
-      }
-
-      setIsReranking(true)
-
-      try {
-        const initialResults = await performSearch(query, limit * 2)
-
-        const scoredResults = await Promise.all(
-          initialResults.results.map(async (result) => {
-            const response = await scoreResult({
-              query,
-              text: result.text,
-              criteria: rubric.criteria,
-            })
-
-            return {
-              ...result,
-              piScore: response.total_score,
-            }
-          }),
-        )
-
-        // Sort by Pi score
-        const rerankedResults = scoredResults.sort((a, b) => (b.piScore || 0) - (a.piScore || 0)).slice(0, limit)
-
-        return rerankedResults
-      } catch (error) {
-        console.error("[v0] Reranking failed:", error)
-        throw error instanceof SearchError
-          ? error
-          : new SearchError("Reranking operation failed", "SEARCH_FAILED", error)
-      } finally {
-        setIsReranking(false)
-      }
-    },
-    [activeCorpusId, rubrics, performSearch],
-  )
-
   const setActiveCorpus = useCallback((id: string) => {
     setActiveCorpusId(id)
-  }, [])
-
-  const setActiveRubric = useCallback(
-    (id: string | null) => {
-      console.log("[v0] Setting active rubric:", {
-        previousId: activeRubricId,
-        newId: id,
-        rubricName: id ? rubrics.find((r) => r.id === id)?.name : "None",
-      })
-      setActiveRubricId(id)
-    },
-    [activeRubricId, rubrics],
-  )
-
-  const normalizeScore = useCallback((score: number, mode: SearchMode): number => {
-    if (score === undefined || score === null || isNaN(score)) {
-      return 0
-    }
-    if (mode === "keyword") {
-      return Math.min(score / 10, 1)
-    } else if (mode === "semantic") {
-      return score
-    } else {
-      return Math.min(score * 10, 1)
-    }
   }, [])
 
   const performSearchWithRubric = useCallback(
     async (
       query: string,
       limit: number,
-      rubricId: string,
+      rubric: Rubric,
+      index: RubricIndex | undefined,
       weight = 0.5,
     ): Promise<{ searchId: string; results: SearchResult[] }> => {
       if (!activeCorpusId) {
         throw new SearchError("No active corpus selected", "NO_CORPUS")
       }
 
-      console.log("[v0] All rubrics in context:", {
-        totalRubrics: rubrics.length,
-        rubrics: rubrics.map((r) => ({
-          id: r.id,
-          name: r.name,
-          criteriaCount: r.criteria.length,
-          criteria: r.criteria.map((c) => ({ label: c.label, question: c.question })),
-        })),
-      })
-
-      console.log("[v0] Searching for rubric with ID:", rubricId)
-
-      const rubric = rubrics.find((r) => r.id === rubricId)
-      if (!rubric) {
-        console.error(
-          "[v0] Rubric not found! Available IDs:",
-          rubrics.map((r) => r.id),
-        )
-        throw new SearchError("Rubric not found", "SEARCH_FAILED")
-      }
-
-      console.log("[v0] Found rubric for search:", {
-        rubricId: rubric.id,
-        rubricName: rubric.name,
-        criteriaCount: rubric.criteria.length,
-        criteria: rubric.criteria.map((c) => ({ label: c.label, question: c.question })),
-        weight,
-      })
-
       try {
         const { searchId, results: initialResults } = await performSearch(query, limit * 2)
 
-        const scoredResults = await Promise.all(
-          initialResults.map(async (result, index) => {
-            try {
-              console.log(`[v0] Scoring result ${index + 1}/${initialResults.length}:`, {
-                documentId: result.id,
-                documentTitle: result.title,
-                rubricId: rubric.id,
-                rubricName: rubric.name,
-              })
+        let scoredResults: SearchResult[]
 
-              const response = await scoreResult({
-                query,
-                text: result.text,
-                criteria: rubric.criteria,
-              })
+        if (index) {
+          scoredResults = initialResults.map((result) => {
+            const indexedScores = index.scores.get(result.id)
+            const rubricScore = indexedScores?.totalScore ?? 0
+            const questions = indexedScores?.questionScores ?? []
+            const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
+            const combinedScore = combineScores(normalizedRetrievalScore, rubricScore, weight)
 
-              console.log(`[v0] Score response for result ${index + 1}:`, {
-                documentId: result.id,
-                documentTitle: result.title,
-                totalScore: response.total_score,
-                questionScores: response.question_scores,
-                hasError: !!response.error,
-                error: response.error,
-              })
-
-              const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
-              const rubricScore = response.error ? 0 : (response.total_score ?? 0)
-              const combinedScore = (1 - weight) * normalizedRetrievalScore + weight * rubricScore
-
-              console.log(`[v0] Combined score calculation for result ${index + 1}:`, {
-                documentId: result.id,
-                documentTitle: result.title,
-                retrievalScore: normalizedRetrievalScore,
-                rubricScore: rubricScore,
-                weight: weight,
-                combinedScore: combinedScore,
-                formula: `(1 - ${weight}) * ${normalizedRetrievalScore} + ${weight} * ${rubricScore} = ${combinedScore}`,
-              })
-
-              return {
-                ...result,
-                piScore: rubricScore,
-                retrievalScore: normalizedRetrievalScore,
-                score: combinedScore,
-                questionScores: response.question_scores,
-              }
-            } catch (error) {
-              console.error("[v0] Error scoring result:", error)
-              const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
-              return {
-                ...result,
-                piScore: 0,
-                retrievalScore: normalizedRetrievalScore,
-                score: normalizedRetrievalScore,
-              }
+            return {
+              ...result,
+              piScore: rubricScore,
+              retrievalScore: normalizedRetrievalScore,
+              score: combinedScore,
+              questionScores: questions,
             }
-          }),
-        )
+          })
+        } else {
+          scoredResults = await Promise.all(
+            initialResults.map(async (result) => {
+              try {
+                const response = await scoreResult({
+                  query,
+                  text: result.text,
+                  criteria: rubric.criteria,
+                })
+
+                const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
+                const rubricScore = response.error ? 0 : (response.total_score ?? 0)
+                const combinedScore = combineScores(normalizedRetrievalScore, rubricScore, weight)
+
+                return {
+                  ...result,
+                  piScore: rubricScore,
+                  retrievalScore: normalizedRetrievalScore,
+                  score: combinedScore,
+                  questionScores: response.question_scores,
+                }
+              } catch (error) {
+                const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
+                return {
+                  ...result,
+                  piScore: 0,
+                  retrievalScore: normalizedRetrievalScore,
+                  score: normalizedRetrievalScore,
+                }
+              }
+            }),
+          )
+        }
 
         const rerankedResults = scoredResults.sort((a, b) => b.score - a.score).slice(0, limit)
 
@@ -651,11 +420,11 @@ export function SearchProvider({ children }: { children: ReactNode }) {
               ? {
                   ...search,
                   results: rerankedResults,
-                  rubricId,
+                  rubricId: rubric.id,
                   trace: {
                     ...search.trace,
                     rubricScoring: {
-                      rubricId,
+                      rubricId: rubric.id,
                       rubricName: rubric.name,
                       criteriaCount: rubric.criteria.length,
                       scoringMethod: "average",
@@ -678,13 +447,78 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
         return { searchId, results: rerankedResults }
       } catch (error) {
-        console.error("[v0] Rubric-enhanced search failed:", error)
+        console.error("Rubric-enhanced search failed:", error)
         throw error instanceof SearchError
           ? error
           : new SearchError("Rubric-enhanced search failed", "SEARCH_FAILED", error)
       }
     },
-    [activeCorpusId, rubrics, performSearch, searchMode, normalizeScore],
+    [activeCorpusId, performSearch, searchMode],
+  )
+
+  const updateResultRanking = useCallback(
+    (searchId: string, resultId: string, newRank: number, originalRank: number) => {
+      setSearches((prev) =>
+        prev.map((search) => {
+          if (search.id !== searchId) return search
+
+          const currentIndex = search.results.findIndex((r) => r.id === resultId)
+          if (currentIndex === -1) return search
+
+          const newIndex = newRank - 1
+
+          const reorderedResults = arrayMove(search.results, currentIndex, newIndex)
+
+          const updatedResults = reorderedResults.map((result, idx) => {
+            const newPosition = idx + 1
+            if (result.id === resultId) {
+              return {
+                ...result,
+                manualRank: newPosition,
+                originalRank: result.originalRank ?? originalRank,
+              }
+            } else if (result.originalRank === undefined) {
+              const originalIndex = search.results.findIndex((r) => r.id === result.id)
+              return {
+                ...result,
+                originalRank: originalIndex + 1,
+                manualRank: newPosition,
+              }
+            } else {
+              return {
+                ...result,
+                manualRank: newPosition,
+              }
+            }
+          })
+
+          return {
+            ...search,
+            results: updatedResults,
+          }
+        }),
+      )
+
+      const search = searches.find((s) => s.id === searchId)
+      const result = search?.results.find((r) => r.id === resultId)
+
+      if (search && result && result.rating) {
+        setRatedResults((prev) => {
+          const existing = prev.findIndex((r) => r.searchId === searchId && r.resultId === resultId)
+          if (existing >= 0) {
+            const updated = [...prev]
+            updated[existing] = {
+              ...updated[existing],
+              manualRank: newRank,
+              originalRank: result.originalRank ?? originalRank,
+            }
+            return updated
+          }
+          return prev
+        })
+      }
+    },
+    [searches],
   )
 
   return (
@@ -696,22 +530,15 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         isLoadingDefault,
         indexingSteps,
         searchMode,
-        rubrics,
-        activeRubricId,
         ratedResults,
-        isReranking,
         setSearchMode,
         setActiveCorpus,
         addCorpus,
         performSearch,
         rateResult,
-        addRubric,
-        updateRubric,
-        deleteRubric,
-        setActiveRubric,
         getRatedResults,
-        performRerank,
         performSearchWithRubric,
+        updateResultRanking,
       }}
     >
       {children}
