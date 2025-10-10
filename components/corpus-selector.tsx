@@ -14,10 +14,10 @@ export function CorpusSelector() {
   const activeCorpus = corpora.find((c) => c.id === activeCorpusId)
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <div className="flex-1">
         <Select value={activeCorpusId || undefined} onValueChange={setActiveCorpus}>
-          <SelectTrigger className="w-full bg-background border-border h-12 shadow-sm hover:border-primary/50 transition-colors">
+          <SelectTrigger className="w-full bg-background border-border h-9 shadow-sm hover:border-primary/50 transition-colors text-sm">
             <SelectValue placeholder="Select a corpus" />
           </SelectTrigger>
           <SelectContent>
@@ -39,7 +39,7 @@ export function CorpusSelector() {
         variant="outline"
         size="icon"
         onClick={() => setUploadDialogOpen(true)}
-        className="border-border h-12 w-12 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors shadow-sm"
+        className="border-border h-9 w-9 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors shadow-sm"
       >
         <Upload className="h-4 w-4" />
       </Button>
