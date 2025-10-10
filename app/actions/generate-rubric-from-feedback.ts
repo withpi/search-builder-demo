@@ -1,8 +1,6 @@
 "use server"
 
-import { generateText } from "ai"
 import type { RubricCriterion } from "@/lib/types"
-import { createOpenAI } from "@ai-sdk/openai"
 
 export interface FeedbackExample {
   query: string
@@ -16,10 +14,6 @@ const apiKey = process.env.OPEN_AI_KEY
 if (!apiKey) {
   console.error("[v0] OPEN_AI_KEY environment variable is not set")
 }
-
-const openai = createOpenAI({
-  apiKey: apiKey || "",
-})
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<RubricCriterion[]> {
   console.log("[v0] Starting rubric generation with", feedbackExamples.length, "examples")
@@ -84,26 +78,42 @@ Respond with ONLY a JSON object in this exact format:
   "question": "The evaluation question to ask"
 }`
 
-      let response
-      try {
-        console.log("[v0] Calling OpenAI API...")
-        response = await generateText({
-          model: openai("gpt-4o"),
-          prompt,
-        })
-        console.log("[v0] OpenAI API response received, text length:", response.text?.length || 0)
-        console.log("[v0] Response text:", response.text)
-      } catch (apiError: any) {
-        console.error("[v0] OpenAI API call failed:")
-        console.error("[v0] Error name:", apiError?.name)
-        console.error("[v0] Error message:", apiError?.message)
-        console.error("[v0] Error stack:", apiError?.stack)
-        console.error("[v0] Error cause:", apiError?.cause)
-        console.error("[v0] Full error object:", JSON.stringify(apiError, Object.getOwnPropertyNames(apiError), 2))
-        throw apiError
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("[v0] OpenAI API error:", response.status, errorText)
+        throw new Error(`OpenAI API error: ${response.status} ${errorText}`)
       }
 
-      const { text } = response
+      const data = await response.json()
+      console.log("[v0] OpenAI API response received")
+
+      const text = data.choices?.[0]?.message?.content
+
+      if (!text) {
+        console.error("[v0] No content in OpenAI response:", data)
+        throw new Error("No content in OpenAI response")
+      }
+
+      console.log("[v0] Response text:", text)
 
       let parsed
       try {
