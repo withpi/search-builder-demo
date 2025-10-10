@@ -1,81 +1,78 @@
 "use server"
 
 import { generateObject } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
 import { z } from "zod"
+import type { StepFeedback } from "@/lib/agent-context"
+import { createOpenAI } from "@ai-sdk/openai"
 
+const questionSchema = z.object({
+  label: z.string().describe("A concise label for the evaluation criterion"),
+  question: z.string().describe("The evaluation question to ask"),
+  options: z.array(z.string()).optional().describe("Optional multiple choice options for the question"),
+})
 const openai = createOpenAI({
   apiKey: process.env.OPEN_AI_KEY,
 })
 
-export interface FeedbackExample {
-  query: string
-  result: string
-  rating: "up" | "down"
-  feedback: string
-}
-
-export interface GeneratedCriterion {
+export async function generateRubricFromFeedback(feedback: StepFeedback): Promise<{
   label: string
   question: string
-}
+  options?: string[]
+}> {
+  const isPositive = feedback.rating === "up"
 
-const rubricSchema = z.object({
-  criteria: z.array(
-    z.object({
-      label: z.string().describe("Short label like 'Relevance' or 'Accuracy'"),
-      question: z.string().describe("Yes/no question for evaluating search results"),
-    }),
-  ),
-})
+  const prompt = `Convert this feedback into an evaluation question. The question must be GENERALIZABLE to work for ANY query, not just this specific example.
 
-export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
-  if (!feedbackExamples || feedbackExamples.length === 0) {
-    throw new Error("No feedback examples provided")
-  }
+Feedback: "${feedback.description}"
+Step Type: ${feedback.stepType}
+${feedback.toolName ? `Tool Name: ${feedback.toolName}` : ""}
 
-  const positiveExamples = feedbackExamples.filter((ex) => ex.rating === "up")
-  const negativeExamples = feedbackExamples.filter((ex) => ex.rating === "down")
+INPUT CONTEXT (for understanding structure only):
+${feedback.input}
 
-  const prompt = `You are an expert at creating evaluation rubrics for search result quality. Based on user feedback about search results, generate 5-10 evaluation criteria that capture what makes results good or bad.
+OUTPUT CONTEXT (for understanding structure only):
+${feedback.output}
 
-POSITIVE FEEDBACK (what users liked):
-${positiveExamples
-  .map(
-    (ex, i) => `
-${i + 1}. Query: "${ex.query}"
-   Result: "${ex.result.substring(0, 200)}..."
-   Why it was helpful: "${ex.feedback}"
-`,
-  )
-  .join("\n")}
+CRITICAL RULES:
+1. Keep the EXACT requirement from the feedback - do not add qualifiers, interpretations, or extra criteria
+2. Make the question work for ANY query - do not reference specific content from this example
+3. Reference structure/format/approach, NOT the specific content
+4. Only convert the statement to a question format
+5. FOR TOOL-CALLS: Explicitly specify whether evaluating the "tool query" (parameters/input) or "tool response" (output/result)
 
-NEGATIVE FEEDBACK (what users disliked):
-${negativeExamples
-  .map(
-    (ex, i) => `
-${i + 1}. Query: "${ex.query}"
-   Result: "${ex.result.substring(0, 200)}..."
-   Why it wasn't helpful: "${ex.feedback}"
-`,
-  )
-  .join("\n")}
+EXAMPLES:
 
-Generate 5-10 evaluation criteria as questions that can be used to score search results. Each criterion should:
-1. Be phrased as a yes/no question
-2. Capture patterns from the feedback (e.g., relevance, accuracy, completeness, clarity)
-3. Be specific enough to be actionable but general enough to apply to different queries`
+Feedback: "it should be a table"
+Question: "Is the response formatted as a table?"
+(NOT: "Is the response about activities formatted as a table?")
 
-  try {
-    const { object } = await generateObject({
-      model: "openai/gpt-4o",
-      schema: rubricSchema,
-      prompt,
-    })
+Feedback: "missing location parameter"
+Question: "Does the tool query include the location parameter?"
+(NOT: "Does the tool call include the Bernal Heights location?")
 
-    return object.criteria
-  } catch (error) {
-    console.error("[v0] Error generating rubric from feedback:", error)
-    throw new Error(`Failed to generate rubric: ${error instanceof Error ? error.message : "Unknown error"}`)
-  }
+Feedback: "search results are irrelevant"
+Question: "Does the tool response contain relevant information?"
+(NOT: "Does the search response contain relevant bars in Bernal Heights?")
+
+Feedback: "too many API calls"
+Question: "Does the agent minimize API calls?"
+(NOT: "Does the agent minimize API calls when searching for bars?")
+
+Feedback: "search query too broad"
+Question: "Does the tool query use specific, targeted parameters?"
+(NOT: "Does the search query specify Bernal Heights specifically?")
+
+Feedback: "response lacks detail"
+Question: "Does the response provide sufficient detail?"
+(NOT: "Does the response provide sufficient detail about Bernal Heights?")
+
+Create a question that evaluates ${isPositive ? "whether this positive behavior is present" : "whether this negative behavior is avoided"}.`
+
+  const { object } = await generateObject({
+    model: openai("gpt-4o"),
+    schema: questionSchema,
+    prompt,
+  })
+
+  return object
 }
