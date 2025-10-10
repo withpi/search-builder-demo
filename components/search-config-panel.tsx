@@ -44,7 +44,7 @@ export function SearchConfigPanel() {
   }
 
   return (
-    <Card className="h-fit sticky border shadow-sm">
+    <Card className="h-fit sticky top-4 p-0 border shadow-sm">
       <div className="px-6 pt-6 pb-6 border-b bg-background">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
