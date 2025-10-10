@@ -35,7 +35,7 @@ export function SearchHistory() {
       {/* Left Panel - Search History List */}
       <div className="w-1/3 border-r border-border flex flex-col bg-background">
         {/* Fixed Header */}
-        <div className="flex-shrink-0 px-6 py-6 border-b border-border">
+        <div className="flex-shrink-0 px-6 py-6 border-b border-border min-h-[88px] flex items-center">
           <h2 className="text-lg font-semibold text-foreground">Search History</h2>
         </div>
 
@@ -122,7 +122,7 @@ export function SearchHistory() {
         {selectedSearch ? (
           <>
             {/* Fixed Header */}
-            <div className="flex-shrink-0 px-6 py-6 border-b border-border">
+            <div className="flex-shrink-0 px-6 py-6 border-b border-border min-h-[88px]">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">{selectedSearch.query}</h2>
