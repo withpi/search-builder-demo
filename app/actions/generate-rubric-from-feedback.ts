@@ -1,7 +1,22 @@
 "use server"
 
 import { generateObject } from "ai"
+import { createVertex } from "@ai-sdk/google-vertex"
 import { z } from "zod"
+
+export const vertex = createVertex({
+  project: process.env.VERCEL_ENV == "production" ? "twopir-pilot" : "pilabs-dev",
+  location: "us-central1",
+  googleAuthOptions: {
+    credentials: {
+      client_email:
+        process.env.VERCEL_ENV == "production"
+          ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
+          : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
+      private_key: process.env.SERVICE_ACCOUNT_KEY,
+    },
+  },
+})
 
 export interface FeedbackExample {
   query: string
@@ -58,7 +73,7 @@ Generate 5-10 evaluation criteria as questions that can be used to score search 
 3. Be specific enough to be actionable but general enough to apply to different queries`
 
   const { object } = await generateObject({
-    model: "google/gemini-2.0-flash-exp",
+    model: vertex("gemini-2.0-flash-exp"),
     schema: rubricSchema,
     prompt,
     maxOutputTokens: 2000,
