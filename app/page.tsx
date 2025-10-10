@@ -109,7 +109,7 @@ export default function Home() {
               </div>
               <SearchInterface />
             </TabsContent>
-            <TabsContent value="history" className="mt-0">
+            <TabsContent value="history" className="mt-0 h-full">
               <SearchHistory />
             </TabsContent>
             <TabsContent value="browse" className="mt-0">
