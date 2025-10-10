@@ -21,7 +21,7 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
   const buildRubricIndex = useCallback(async (rubric: Rubric, corpus: Corpus): Promise<RubricIndex> => {
     const scores = new Map<string, { totalScore: number; questionScores: Array<{ label: string; score: number }> }>()
 
-    const BATCH_SIZE = 10
+    const BATCH_SIZE = 50
     const totalDocs = corpus.documents.length
 
     for (let i = 0; i < totalDocs; i += BATCH_SIZE) {
@@ -93,8 +93,19 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
         let completedCorpora = 0
 
         for (const corpus of readyCorpora) {
+          const progressInterval = setInterval(() => {
+            if (indexingProgress) {
+              toast.loading(`Building index for "${rubric.name}"...`, {
+                id: toastId,
+                description: `${indexingProgress.current}/${indexingProgress.total} documents indexed in ${indexingProgress.corpusName}`,
+              })
+            }
+          }, 500)
+
           const index = await buildRubricIndex(rubric, corpus)
           onIndexCreated(index)
+
+          clearInterval(progressInterval)
 
           completedCorpora++
           toast.loading(`Building index for "${rubric.name}"...`, {
@@ -122,7 +133,7 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
         setIndexingProgress(null)
       }
     },
-    [corpora, buildRubricIndex, onIndexCreated],
+    [corpora, buildRubricIndex, onIndexCreated, indexingProgress],
   )
 
   const isIndexing = indexingRubrics.size > 0
