@@ -60,7 +60,7 @@ export default function Home() {
       ) : activeCorpus?.isReady ? (
         <Tabs defaultValue="search" className="flex flex-col h-screen">
           <nav className="border-b border-border bg-card/80 backdrop-blur-sm shadow-sm flex-shrink-0">
-            <div className="container mx-auto px-6 py-3 flex justify-center">
+            <div className="flex justify-center px-6 py-3">
               <TabsList className="bg-secondary/50 border border-border shadow-sm h-9">
                 <TabsTrigger
                   value="search"
