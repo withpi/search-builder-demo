@@ -6,15 +6,11 @@ import { useSearch } from "@/lib/search-context"
 import { useRubric } from "@/lib/rubric-context"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
 import { Search, Loader2 } from "lucide-react"
 import { SearchResults } from "./search-results"
 import { SearchResultsSkeleton } from "./search-results-skeleton"
 import { EmptyState } from "./empty-state"
 import { ErrorBoundary } from "./error-boundary"
-import { ResultLimitSelector } from "./result-limit-selector"
-import { SearchModeSelector } from "./search-mode-selector"
-import { RubricSelector } from "./rubric-selector"
 import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
 import { RetrievalTrace } from "./retrieval-trace"
 import { SearchConfigPanel } from "./search-config-panel"
@@ -128,46 +124,7 @@ export function SearchInterface() {
               className="text-base h-12"
             />
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1">
-                <SearchModeSelector
-                  value={searchMode}
-                  onChange={setSearchMode}
-                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                />
-                <ResultLimitSelector
-                  value={resultLimit}
-                  onChange={setResultLimit}
-                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                />
-                <RubricSelector
-                  rubrics={rubrics}
-                  value={activeRubricId}
-                  onChange={setActiveRubric}
-                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                  indexingRubrics={indexingRubrics}
-                />
-
-                {activeRubricId && (
-                  <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-lg border border-border flex-1 max-w-md">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Retrieval</span>
-                    <Slider
-                      value={[rubricWeight]}
-                      onValueChange={(value) => setRubricWeight(value[0])}
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      className="flex-1"
-                      disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                    />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Rubric</span>
-                    <span className="text-xs font-medium text-foreground whitespace-nowrap ml-2">
-                      {Math.round((1 - rubricWeight) * 100)}% • {Math.round(rubricWeight * 100)}%
-                    </span>
-                  </div>
-                )}
-              </div>
-
+            <div className="flex items-center justify-end">
               <Button onClick={handleSearch} disabled={!canSearch || isSearching} size="lg" className="h-12 px-8">
                 {isSearching ? (
                   <>
