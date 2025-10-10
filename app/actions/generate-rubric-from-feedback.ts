@@ -1,7 +1,8 @@
 "use server"
 
-import { generateText } from "ai"
+import { generateObject } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
+import { z } from "zod"
 
 export interface FeedbackExample {
   query: string
@@ -17,6 +18,15 @@ export interface GeneratedCriterion {
 
 const openai = createOpenAI({
   apiKey: process.env.OPEN_AI_KEY,
+})
+
+const rubricSchema = z.object({
+  criteria: z.array(
+    z.object({
+      label: z.string().describe("Short label like 'Relevance' or 'Accuracy'"),
+      question: z.string().describe("Yes/no question for evaluating search results"),
+    }),
+  ),
 })
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
@@ -58,34 +68,17 @@ ${i + 1}. Query: "${ex.query}"
 Generate 5-10 evaluation criteria as questions that can be used to score search results. Each criterion should:
 1. Be phrased as a yes/no question
 2. Capture patterns from the feedback (e.g., relevance, accuracy, completeness, clarity)
-3. Be specific enough to be actionable but general enough to apply to different queries
-
-Return your response as a JSON object with this exact structure:
-{
-  "criteria": [
-    {
-      "label": "Short label like 'Relevance' or 'Accuracy'",
-      "question": "Yes/no question for evaluating search results"
-    }
-  ]
-}
-
-Return ONLY the JSON object, no additional text.`
+3. Be specific enough to be actionable but general enough to apply to different queries`
 
   try {
-    const { text } = await generateText({
+    const { object } = await generateObject({
       model: openai("gpt-4o"),
+      schema: rubricSchema,
       prompt,
-      maxTokens: 2000,
+      mode: "json",
     })
 
-    const parsed = JSON.parse(text)
-
-    if (!parsed.criteria || !Array.isArray(parsed.criteria)) {
-      throw new Error("Invalid response format: missing criteria array")
-    }
-
-    return parsed.criteria
+    return object.criteria
   } catch (error) {
     console.error("[v0] Error generating rubric from feedback:", error)
     throw new Error(`Failed to generate rubric: ${error instanceof Error ? error.message : "Unknown error"}`)
