@@ -33,7 +33,13 @@ const STOP_WORDS = new Set([
 /**
  * Converts text to lowercase
  */
-export const lowerCase = (text: string): string => text.toLowerCase()
+export const lowerCase = (text: string): string => {
+  if (text === null || text === undefined) {
+    console.warn("[v0] lowerCase called with null/undefined, returning empty string")
+    return ""
+  }
+  return text.toLowerCase()
+}
 
 /**
  * Removes extra whitespace and trims text
@@ -69,6 +75,9 @@ export const stem = (tokens: string[]): string[] => {
  * Applies lowercase, cleaning, tokenization, stop word removal, and stemming
  */
 export const prepareText = (text: string): string[] => {
+  if (text === null || text === undefined || text === "") {
+    return []
+  }
   const lower = lowerCase(text)
   const cleaned = removeExtraSpaces(lower)
   const tokens = tokenize(cleaned)

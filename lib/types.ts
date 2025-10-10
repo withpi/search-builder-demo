@@ -129,6 +129,7 @@ export interface RatedResult {
   text: string
   title?: string
   rating: "up" | "down"
+  feedback?: string // Added feedback field to store user's written feedback
   timestamp: Date
   manualRank?: number // Include manual ranking in rated results
   originalRank?: number // Include original ranking for comparison

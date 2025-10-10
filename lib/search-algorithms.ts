@@ -101,7 +101,7 @@ export async function indexDocumentsWithBM25(
       engine.addDoc(
         {
           title: doc.title || "",
-          text: doc.text,
+          text: doc.text || "",
           id: doc.id,
           url: doc.url,
         },
@@ -144,7 +144,7 @@ export async function generateTFIDFVectors(
 
     for (let j = i; j < batchEnd; j++) {
       const doc = documents[j]
-      const text = `${doc.title || ""} ${doc.text}`.trim()
+      const text = `${doc.title || ""} ${doc.text || ""}`.trim()
       batch.push(prepareText(text))
     }
 

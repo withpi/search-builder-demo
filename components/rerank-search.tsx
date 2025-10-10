@@ -141,13 +141,27 @@ export function RerankSearch() {
                           )}
                         </h4>
                         <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs font-semibold text-primary">Total: {result.score.toFixed(3)}</span>
                           {result.piScore !== undefined && (
-                            <span className="text-xs font-medium text-primary">Pi: {result.piScore.toFixed(3)}</span>
+                            <span className="text-xs font-medium text-blue-600">
+                              Pi Score: {result.piScore.toFixed(3)}
+                            </span>
                           )}
-                          <span className="text-xs text-muted-foreground">Score: {result.score.toFixed(3)}</span>
                           <span className="text-xs text-muted-foreground">#{index + 1}</span>
                         </div>
                       </div>
+                      {result.questionScores && result.questionScores.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          {result.questionScores.map((qs: { label: string; score: number }, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            >
+                              {qs.label}: {qs.score.toFixed(2)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <p
                         className={`text-sm text-muted-foreground whitespace-pre-wrap ${
                           isExpanded ? "" : "line-clamp-2"

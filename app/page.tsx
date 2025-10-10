@@ -58,9 +58,9 @@ export default function Home() {
           </div>
         </div>
       ) : activeCorpus?.isReady ? (
-        <Tabs defaultValue="search" className="flex flex-col flex-1">
-          <nav className="border-b border-border bg-card/80 backdrop-blur-sm shadow-sm">
-            <div className="container mx-auto px-6 py-3">
+        <Tabs defaultValue="search" className="flex flex-col h-screen">
+          <nav className="border-b border-border bg-card/80 backdrop-blur-sm shadow-sm flex-shrink-0">
+            <div className="flex justify-center px-6 py-3">
               <TabsList className="bg-secondary/50 border border-border shadow-sm h-9">
                 <TabsTrigger
                   value="search"
@@ -101,25 +101,33 @@ export default function Home() {
             </div>
           </nav>
 
-          <div className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
-            <TabsContent value="search" className="mt-0">
-              <div className="text-center mb-8">
-                <h1 className="text-5xl font-bold text-foreground tracking-tight mb-2">Search Builder</h1>
-                <p className="text-sm text-muted-foreground">Demo platform for search engine technologies</p>
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="search" className="mt-0 h-full overflow-y-auto">
+              <div className="container mx-auto px-6 py-8 max-w-7xl">
+                <div className="text-center mb-8">
+                  <h1 className="text-5xl font-bold text-foreground tracking-tight mb-2">Search Builder</h1>
+                  <p className="text-sm text-muted-foreground">Demo platform for search engine technologies</p>
+                </div>
+                <SearchInterface />
               </div>
-              <SearchInterface />
             </TabsContent>
-            <TabsContent value="history" className="mt-0">
+            <TabsContent value="history" className="mt-0 h-full overflow-hidden">
               <SearchHistory />
             </TabsContent>
-            <TabsContent value="browse" className="mt-0">
-              <CorpusBrowser />
+            <TabsContent value="browse" className="mt-0 h-full overflow-y-auto">
+              <div className="container mx-auto px-6 py-8 max-w-7xl">
+                <CorpusBrowser />
+              </div>
             </TabsContent>
-            <TabsContent value="reranker" className="mt-0">
-              <RerankerTab />
+            <TabsContent value="reranker" className="mt-0 h-full overflow-y-auto">
+              <div className="container mx-auto px-6 py-8 max-w-7xl">
+                <RerankerTab />
+              </div>
             </TabsContent>
-            <TabsContent value="evaluate" className="mt-0">
-              <EvaluateSearch />
+            <TabsContent value="evaluate" className="mt-0 h-full overflow-y-auto">
+              <div className="container mx-auto px-6 py-8 max-w-7xl">
+                <EvaluateSearch />
+              </div>
             </TabsContent>
           </div>
         </Tabs>

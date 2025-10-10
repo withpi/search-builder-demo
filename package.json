@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/openai": "latest",
     "@dnd-kit/core": "latest",
     "@dnd-kit/sortable": "latest",
     "@dnd-kit/utilities": "latest",
@@ -24,7 +25,7 @@
     "@radix-ui/react-collapsible": "latest",
     "@radix-ui/react-context-menu": "2.2.4",
     "@radix-ui/react-dialog": "latest",
-    "@radix-ui/react-dropdown-menu": "2.1.4",
+    "@radix-ui/react-dropdown-menu": "latest",
     "@radix-ui/react-hover-card": "1.1.4",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-menubar": "1.1.4",
@@ -35,7 +36,7 @@
     "@radix-ui/react-scroll-area": "latest",
     "@radix-ui/react-select": "latest",
     "@radix-ui/react-separator": "1.1.1",
-    "@radix-ui/react-slider": "1.2.2",
+    "@radix-ui/react-slider": "latest",
     "@radix-ui/react-slot": "latest",
     "@radix-ui/react-switch": "1.1.2",
     "@radix-ui/react-tabs": "latest",
@@ -44,6 +45,7 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@vercel/analytics": "latest",
+    "ai": "latest",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -71,7 +73,7 @@
     "vaul": "^0.9.9",
     "wink-bm25-text-search": "latest",
     "withpi": "latest",
-    "zod": "3.25.67"
+    "zod": "latest"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",

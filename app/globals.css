@@ -11,19 +11,21 @@
   --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.55 0.22 250);
+  /* Using hex color #6443e9 directly to preserve vibrant purple */
+  --primary: #6443e9;
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.01 250);
+  --secondary: oklch(0.96 0.01 280);
   --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.96 0.01 250);
-  --muted-foreground: oklch(0.5 0.01 250);
-  --accent: oklch(0.94 0.02 250);
+  --muted: oklch(0.96 0.01 280);
+  --muted-foreground: oklch(0.5 0.01 280);
+  --accent: oklch(0.94 0.02 280);
   --accent-foreground: oklch(0.15 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0.01 250);
-  --input: oklch(0.94 0.01 250);
-  --ring: oklch(0.55 0.22 250);
+  --border: oklch(0.9 0.01 280);
+  --input: oklch(0.94 0.01 280);
+  /* Using hex color for ring to match primary */
+  --ring: #6443e9;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -32,12 +34,14 @@
   --radius: 0.75rem;
   --sidebar: oklch(0.99 0 0);
   --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.55 0.22 250);
+  /* Using hex color for sidebar primary */
+  --sidebar-primary: #6443e9;
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.96 0.01 250);
+  --sidebar-accent: oklch(0.96 0.01 280);
   --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.9 0.01 250);
-  --sidebar-ring: oklch(0.55 0.22 250);
+  --sidebar-border: oklch(0.9 0.01 280);
+  /* Using hex color for sidebar ring */
+  --sidebar-ring: #6443e9;
 }
 
 .dark {
@@ -47,8 +51,9 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Using slightly lighter hex variant for dark mode primary */
+  --primary: #8b7ff5;
+  --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -67,8 +72,9 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  /* Using lighter hex variant for dark mode sidebar primary */
+  --sidebar-primary: #8b7ff5;
+  --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);

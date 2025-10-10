@@ -8,7 +8,7 @@ import type { SearchResult } from "@/lib/types"
 interface UseSearchResultsProps {
   results: SearchResult[]
   searchId: string | null
-  onRate: (searchId: string, resultId: string, rating: "up" | "down") => void
+  onRate: (searchId: string, resultId: string, rating: "up" | "down", feedback?: string) => void
   onUpdateRanking: (searchId: string, resultId: string, newRank: number, originalRank: number) => void
 }
 
@@ -29,9 +29,9 @@ export function useSearchResults({ results, searchId, onRate, onUpdateRanking }:
   )
 
   const handleRate = useCallback(
-    (resultId: string, rating: "up" | "down") => {
+    (resultId: string, rating: "up" | "down", feedback?: string) => {
       if (!searchId) return
-      onRate(searchId, resultId, rating)
+      onRate(searchId, resultId, rating, feedback)
     },
     [searchId, onRate],
   )
