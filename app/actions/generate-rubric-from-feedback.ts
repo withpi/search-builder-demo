@@ -68,25 +68,20 @@ Question: "Does the response provide sufficient detail?"
 
 Create a question that evaluates ${isPositive ? "whether this positive behavior is present" : "whether this negative behavior is avoided"}.`
 
-    try {
-      console.log("[v0] Generating rubric criterion for feedback:", item.feedback.substring(0, 50))
+    console.log("[v0] Generating rubric criterion for feedback:", item.feedback.substring(0, 50))
 
-      const { object } = await generateObject({
-        model: openai("gpt-4o"),
-        schema: questionSchema,
-        prompt,
-      })
+    const { object } = await generateObject({
+      model: openai("gpt-4o"),
+      schema: questionSchema,
+      prompt,
+    })
 
-      console.log("[v0] Generated criterion:", object.label)
+    console.log("[v0] Generated criterion:", object.label)
 
-      criteria.push({
-        label: object.label,
-        question: object.question,
-      })
-    } catch (error) {
-      console.error("[v0] Error generating criterion:", error)
-      continue
-    }
+    criteria.push({
+      label: object.label,
+      question: object.question,
+    })
   }
 
   if (criteria.length === 0) {
