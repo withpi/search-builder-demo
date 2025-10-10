@@ -38,6 +38,11 @@ export async function generateRubricFromFeedback(feedbackExamples: FeedbackExamp
     throw new Error("OPEN_AI_KEY environment variable is not set")
   }
 
+  const apiKey = process.env.OPEN_AI_KEY
+  console.log("[v0] API key exists:", !!apiKey)
+  console.log("[v0] API key length:", apiKey?.length)
+  console.log("[v0] API key starts with 'sk-':", apiKey?.startsWith("sk-"))
+
   if (!feedbackExamples || feedbackExamples.length === 0) {
     console.error("[v0] No feedback examples provided")
     throw new Error("No feedback examples provided")
@@ -81,8 +86,12 @@ Generate 5-10 evaluation criteria as questions that can be used to score search 
   console.log("[v0] Calling OpenAI API with model: gpt-4o")
 
   try {
+    const openaiClient = createOpenAI({
+      apiKey: apiKey,
+    })
+
     const { object } = await generateObject({
-      model: openai("gpt-4o"),
+      model: openaiClient("gpt-4o"),
       schema: rubricSchema,
       prompt,
       maxOutputTokens: 2000,
@@ -92,10 +101,17 @@ Generate 5-10 evaluation criteria as questions that can be used to score search 
     return object.criteria
   } catch (error) {
     console.error("[v0] Error calling OpenAI API:", error)
+
     if (error instanceof Error) {
+      console.error("[v0] Error name:", error.name)
       console.error("[v0] Error message:", error.message)
       console.error("[v0] Error stack:", error.stack)
+
+      // Log all properties of the error object
+      console.error("[v0] Error object keys:", Object.keys(error))
+      console.error("[v0] Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
     }
+
     throw new Error(`Failed to generate rubric: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }
