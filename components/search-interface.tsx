@@ -113,7 +113,7 @@ export function SearchInterface() {
         {/* Main Search Area */}
         <div className="flex-1 space-y-6">
           {/* Search Input */}
-          <div className="space-y-4">
+          <div className="relative">
             <Input
               type="text"
               placeholder="Enter your search query..."
@@ -121,24 +121,16 @@ export function SearchInterface() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-              className="text-base h-12"
+              className="text-base h-14 pr-16"
             />
-
-            <div className="flex items-center justify-end">
-              <Button onClick={handleSearch} disabled={!canSearch || isSearching} size="lg" className="h-12 px-8">
-                {isSearching ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Searching...
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" />
-                    Search
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button
+              onClick={handleSearch}
+              disabled={!canSearch || isSearching}
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-xl"
+            >
+              {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+            </Button>
           </div>
 
           {/* Results */}
