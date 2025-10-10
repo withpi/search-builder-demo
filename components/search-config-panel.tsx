@@ -26,8 +26,8 @@ const sections: ConfigSection[] = [
 ]
 
 export function SearchConfigPanel() {
-  const { searchMode, setSearchMode, rubrics, activeRubricId, setActiveRubric, activeCorpusId, corpora } = useSearch()
-  const { indexingRubrics } = useRubric()
+  const { searchMode, setSearchMode, activeCorpusId, corpora } = useSearch()
+  const { rubrics, activeRubricId, setActiveRubric, indexingRubrics } = useRubric()
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     index: true,
