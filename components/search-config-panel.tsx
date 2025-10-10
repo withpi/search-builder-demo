@@ -10,6 +10,7 @@ import { CorpusSelector } from "@/components/corpus-selector"
 import { SearchModeSelector } from "@/components/search-mode-selector"
 import { RubricSelector } from "@/components/rubric-selector"
 import { useSearch } from "@/lib/search-context"
+import { useRubric } from "@/lib/rubric-context"
 
 interface ConfigSection {
   id: string
@@ -26,6 +27,7 @@ const sections: ConfigSection[] = [
 
 export function SearchConfigPanel() {
   const { searchMode, setSearchMode, rubrics, activeRubricId, setActiveRubric, activeCorpusId, corpora } = useSearch()
+  const { indexingRubrics } = useRubric()
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     index: true,
@@ -131,6 +133,7 @@ export function SearchConfigPanel() {
                         value={activeRubricId}
                         onChange={setActiveRubric}
                         disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                        indexingRubrics={indexingRubrics}
                       />
                     </div>
                     <div className="space-y-2">
