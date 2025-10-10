@@ -2,12 +2,12 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSearch } from "@/lib/search-context"
-import { Loader2, Search, History, BookOpen, Sparkles } from "lucide-react"
-import { CorpusSelector } from "@/components/corpus-selector"
+import { Loader2, Search, History, BookOpen, Sparkles, BarChart } from "lucide-react"
 import { SearchInterface } from "@/components/search-interface"
 import { SearchHistory } from "@/components/search-history"
 import { CorpusBrowser } from "@/components/corpus-browser"
 import { RerankerTab } from "@/components/reranker-tab"
+import { EvaluateSearch } from "@/components/evaluate-search"
 
 export default function Home() {
   const { isLoadingDefault, corpora, activeCorpusId, indexingSteps } = useSearch()
@@ -60,7 +60,7 @@ export default function Home() {
       ) : activeCorpus?.isReady ? (
         <Tabs defaultValue="search" className="flex flex-col flex-1">
           <nav className="border-b border-border bg-card/80 backdrop-blur-sm shadow-sm">
-            <div className="container mx-auto px-6 py-3 flex items-center justify-between gap-4">
+            <div className="container mx-auto px-6 py-3">
               <TabsList className="bg-secondary/50 border border-border shadow-sm h-9">
                 <TabsTrigger
                   value="search"
@@ -90,10 +90,14 @@ export default function Home() {
                   <Sparkles className="h-3.5 w-3.5" />
                   Reranker
                 </TabsTrigger>
+                <TabsTrigger
+                  value="evaluate"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+                >
+                  <BarChart className="h-3.5 w-3.5" />
+                  Evaluate Search
+                </TabsTrigger>
               </TabsList>
-              <div className="w-80">
-                <CorpusSelector />
-              </div>
             </div>
           </nav>
 
@@ -113,6 +117,9 @@ export default function Home() {
             </TabsContent>
             <TabsContent value="reranker" className="mt-0">
               <RerankerTab />
+            </TabsContent>
+            <TabsContent value="evaluate" className="mt-0">
+              <EvaluateSearch />
             </TabsContent>
           </div>
         </Tabs>

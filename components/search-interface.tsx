@@ -11,11 +11,10 @@ import { SearchResults } from "./search-results"
 import { SearchResultsSkeleton } from "./search-results-skeleton"
 import { EmptyState } from "./empty-state"
 import { ErrorBoundary } from "./error-boundary"
-import { SearchModeSelector } from "./search-mode-selector"
 import { ResultLimitSelector } from "./result-limit-selector"
-import { RubricSelector } from "./rubric-selector"
 import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
 import { RetrievalTrace } from "./retrieval-trace"
+import { SearchConfigPanel } from "./search-config-panel"
 
 export function SearchInterface() {
   const {
@@ -94,101 +93,98 @@ export function SearchInterface() {
 
   return (
     <ErrorBoundary>
-      <div className="space-y-4">
-        {/* Search Bar */}
-        <div className="bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow p-4">
-          <div className="space-y-3">
-            <Input
-              placeholder="Enter your search query..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-12 text-lg px-0 shadow-none"
-              aria-label="Search query input"
-            />
-
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1">
-                <SearchModeSelector
-                  value={searchMode}
-                  onChange={setSearchMode}
-                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                />
-                <ResultLimitSelector
-                  value={resultLimit}
-                  onChange={setResultLimit}
-                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                />
-                <RubricSelector
-                  rubrics={rubrics}
-                  value={activeRubricId}
-                  onChange={setActiveRubric}
-                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                />
-
-                {activeRubricId && (
-                  <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-lg border border-border flex-1 max-w-md">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Retrieval</span>
-                    <Slider
-                      value={[rubricWeight]}
-                      onValueChange={(value) => setRubricWeight(value[0])}
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      className="flex-1"
-                      disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                    />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Rubric</span>
-                    <span className="text-xs font-medium text-foreground whitespace-nowrap ml-2">
-                      {Math.round((1 - rubricWeight) * 100)}% • {Math.round(rubricWeight * 100)}%
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <Button
-                onClick={handleSearch}
-                disabled={!canSearch || isSearching}
-                className="bg-primary text-primary-foreground h-9 px-5 shadow-sm hover:shadow-md transition-all font-semibold"
-                aria-label={isSearching ? "Searching..." : "Search"}
-              >
-                {isSearching ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Searching
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" />
-                    Search
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+      <div className="flex gap-6">
+        {/* Configuration Panel */}
+        <div className="w-80 flex-shrink-0">
+          <SearchConfigPanel />
         </div>
 
-        {/* Results */}
-        {isSearching && <SearchResultsSkeleton count={Math.min(Number.parseInt(resultLimit), 5)} />}
+        {/* Main Search Content */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Search Bar */}
+          <div className="bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow p-4">
+            <div className="space-y-3">
+              <Input
+                placeholder="Enter your search query..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-12 text-lg px-0 shadow-none"
+                aria-label="Search query input"
+              />
 
-        {!isSearching && !hasSearched && <EmptyState icon={Search} title="Enter a query to search the corpus" />}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <ResultLimitSelector
+                    value={resultLimit}
+                    onChange={setResultLimit}
+                    disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                  />
 
-        {!isSearching && hasSearched && currentSearchId && currentResults.length === 0 && (
-          <EmptyState
-            icon={Search}
-            title={`No results found for "${query}"`}
-            description="Try a different search term"
-          />
-        )}
+                  {activeRubricId && (
+                    <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-lg border border-border flex-1 max-w-md">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">More Retrieval</span>
+                      <Slider
+                        value={[rubricWeight]}
+                        onValueChange={(value) => setRubricWeight(value[0])}
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        className="flex-1"
+                        disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">More Rubric</span>
+                      <span className="text-xs font-medium text-foreground whitespace-nowrap ml-2">
+                        {Math.round((1 - rubricWeight) * 100)}% • {Math.round(rubricWeight * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-        {!isSearching && currentSearch && currentResults.length > 0 && (
-          <RetrievalTrace search={currentSearch} corpora={corpora} />
-        )}
+                <Button
+                  onClick={handleSearch}
+                  disabled={!canSearch || isSearching}
+                  className="bg-primary text-primary-foreground h-9 px-5 shadow-sm hover:shadow-md transition-all font-semibold"
+                  aria-label={isSearching ? "Searching..." : "Search"}
+                >
+                  {isSearching ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Searching
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      Search
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
 
-        {!isSearching && currentResults.length > 0 && (
-          <SearchResults results={currentResults} searchId={currentSearchId} />
-        )}
+          {/* Results */}
+          {isSearching && <SearchResultsSkeleton count={Math.min(Number.parseInt(resultLimit), 5)} />}
+
+          {!isSearching && !hasSearched && <EmptyState icon={Search} title="Enter a query to search the corpus" />}
+
+          {!isSearching && hasSearched && currentSearchId && currentResults.length === 0 && (
+            <EmptyState
+              icon={Search}
+              title={`No results found for "${query}"`}
+              description="Try a different search term"
+            />
+          )}
+
+          {!isSearching && currentSearch && currentResults.length > 0 && (
+            <RetrievalTrace search={currentSearch} corpora={corpora} />
+          )}
+
+          {!isSearching && currentResults.length > 0 && (
+            <SearchResults results={currentResults} searchId={currentSearchId} />
+          )}
+        </div>
       </div>
     </ErrorBoundary>
   )
