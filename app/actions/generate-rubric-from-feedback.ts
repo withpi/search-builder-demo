@@ -4,21 +4,6 @@ import { generateObject } from "ai"
 import { createVertex } from "@ai-sdk/google-vertex"
 import { z } from "zod"
 
-export const vertex = createVertex({
-  project: process.env.VERCEL_ENV === "production" ? "twopir-pilot" : "pilabs-dev",
-  location: "us-central1",
-  googleAuthOptions: {
-    credentials: {
-      client_email:
-        process.env.VERCEL_ENV === "production"
-          ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
-          : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
-      // Process private key to handle escaped newlines from environment variables
-      private_key: process.env.SERVICE_ACCOUNT_KEY?.replace(/\\n/g, "\n"),
-    },
-  },
-})
-
 export interface FeedbackExample {
   query: string
   result: string
@@ -40,7 +25,35 @@ const rubricSchema = z.object({
   ),
 })
 
+function getVertexProvider() {
+  const serviceAccountKey = process.env.SERVICE_ACCOUNT_KEY
+
+  if (!serviceAccountKey) {
+    throw new Error("SERVICE_ACCOUNT_KEY environment variable is not set")
+  }
+
+  // Process private key to handle escaped newlines from environment variables
+  const privateKey = serviceAccountKey.replace(/\\n/g, "\n")
+
+  const isProduction = process.env.VERCEL_ENV === "production"
+
+  return createVertex({
+    project: isProduction ? "twopir-pilot" : "pilabs-dev",
+    location: "us-central1",
+    googleAuthOptions: {
+      credentials: {
+        client_email: isProduction
+          ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
+          : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
+        private_key: privateKey,
+      },
+    },
+  })
+}
+
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
+  const vertex = getVertexProvider()
+
   const positiveExamples = feedbackExamples.filter((ex) => ex.rating === "up")
   const negativeExamples = feedbackExamples.filter((ex) => ex.rating === "down")
 
