@@ -19,7 +19,8 @@ export function RubricSelector({
   disabled,
   indexingRubrics = new Set(),
 }: RubricSelectorProps) {
-  const isDisabled = disabled || rubrics.length === 0
+  const safeRubrics = rubrics || []
+  const isDisabled = disabled || safeRubrics.length === 0
 
   const handleChange = (val: string) => {
     const newValue = val === "none" ? null : val
@@ -29,11 +30,11 @@ export function RubricSelector({
   return (
     <Select value={value || "none"} onValueChange={handleChange} disabled={isDisabled}>
       <SelectTrigger className="w-[180px] h-9 bg-background border-border">
-        <SelectValue placeholder={rubrics.length === 0 ? "No rubrics created" : "No rubric"} />
+        <SelectValue placeholder={safeRubrics.length === 0 ? "No rubrics created" : "No rubric"} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="none">No rubric</SelectItem>
-        {rubrics.map((rubric) => {
+        {safeRubrics.map((rubric) => {
           const isIndexing = indexingRubrics.has(rubric.id)
           return (
             <SelectItem key={rubric.id} value={rubric.id} disabled={isIndexing}>

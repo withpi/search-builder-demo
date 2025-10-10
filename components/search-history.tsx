@@ -30,9 +30,9 @@ export function SearchHistory() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* History List */}
-      <div className="lg:col-span-1 flex flex-col h-full">
+      <div className="lg:col-span-1 flex flex-col max-h-[calc(100vh-250px)]">
         <h2 className="text-lg font-semibold text-foreground mb-4">Search History</h2>
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-3">
@@ -112,9 +112,9 @@ export function SearchHistory() {
       </div>
 
       {/* Selected Search Details */}
-      <div className="lg:col-span-2 h-full overflow-auto">
+      <ScrollArea className="lg:col-span-2 max-h-[calc(100vh-250px)]">
         {selectedSearch ? (
-          <div className="space-y-4">
+          <div className="space-y-4 pr-4">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">{selectedSearch.query}</h2>
@@ -132,14 +132,14 @@ export function SearchHistory() {
             <SearchResults results={selectedSearch.results} searchId={selectedSearch.id} />
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
+          <div className="flex items-center justify-center h-[400px] text-muted-foreground">
             <div className="text-center">
               <p className="text-lg">Select a search to view details</p>
               <p className="text-sm mt-2">Click on any search from the history</p>
             </div>
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   )
 }

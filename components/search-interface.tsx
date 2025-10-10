@@ -13,6 +13,8 @@ import { SearchResultsSkeleton } from "./search-results-skeleton"
 import { EmptyState } from "./empty-state"
 import { ErrorBoundary } from "./error-boundary"
 import { ResultLimitSelector } from "./result-limit-selector"
+import { SearchModeSelector } from "./search-mode-selector"
+import { RubricSelector } from "./rubric-selector"
 import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
 import { RetrievalTrace } from "./retrieval-trace"
 import { SearchConfigPanel } from "./search-config-panel"
@@ -112,6 +114,20 @@ export function SearchInterface() {
           <SearchConfigPanel />
         </div>
 
+        {/* Main Search Area */}
+        <div className="flex-1 space-y-6">
+          {/* Search Input */}
+          <div className="space-y-4">
+            <Input
+              type="text"
+              placeholder="Enter your search query..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+              className="text-base h-12"
+            />
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-1">
                 <SearchModeSelector
@@ -151,6 +167,20 @@ export function SearchInterface() {
                   </div>
                 )}
               </div>
+
+              <Button onClick={handleSearch} disabled={!canSearch || isSearching} size="lg" className="h-12 px-8">
+                {isSearching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 

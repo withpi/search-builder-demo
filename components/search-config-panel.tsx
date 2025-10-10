@@ -162,4 +162,3 @@ export function SearchConfigPanel() {
     </Card>
   )
 }
-
