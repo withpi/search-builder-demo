@@ -11,8 +11,8 @@
   --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  /* Using hex color #5a55cc directly for more vibrant primary color */
-  --primary: #5a55cc;
+  /* Using hex color #6443e9 directly to preserve vibrant purple */
+  --primary: #6443e9;
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.96 0.01 280);
   --secondary-foreground: oklch(0.15 0 0);
@@ -25,7 +25,7 @@
   --border: oklch(0.9 0.01 280);
   --input: oklch(0.94 0.01 280);
   /* Using hex color for ring to match primary */
-  --ring: #5a55cc;
+  --ring: #6443e9;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -35,13 +35,13 @@
   --sidebar: oklch(0.99 0 0);
   --sidebar-foreground: oklch(0.15 0 0);
   /* Using hex color for sidebar primary */
-  --sidebar-primary: #5a55cc;
+  --sidebar-primary: #6443e9;
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.96 0.01 280);
   --sidebar-accent-foreground: oklch(0.15 0 0);
   --sidebar-border: oklch(0.9 0.01 280);
   /* Using hex color for sidebar ring */
-  --sidebar-ring: #5a55cc;
+  --sidebar-ring: #6443e9;
 }
 
 .dark {
@@ -51,8 +51,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  /* Using lighter hex variant for dark mode primary */
-  --primary: #7c75e8;
+  /* Using slightly lighter hex variant for dark mode primary */
+  --primary: #8b7ff5;
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -73,7 +73,7 @@
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   /* Using lighter hex variant for dark mode sidebar primary */
-  --sidebar-primary: #7c75e8;
+  --sidebar-primary: #8b7ff5;
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
