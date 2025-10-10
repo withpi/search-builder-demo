@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useMemo, useCallback } from "react"
 import { useSearch } from "@/lib/search-context"
+import { useRubric } from "@/lib/rubric-context"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -17,18 +18,11 @@ import { RetrievalTrace } from "./retrieval-trace"
 import { SearchConfigPanel } from "./search-config-panel"
 
 export function SearchInterface() {
-  const {
-    performSearch,
-    performSearchWithRubric,
-    activeCorpusId,
-    corpora,
-    searches,
-    searchMode,
-    setSearchMode,
-    rubrics,
-    activeRubricId,
-    setActiveRubric,
-  } = useSearch()
+  const { performSearch, performSearchWithRubric, activeCorpusId, corpora, searches, searchMode, setSearchMode } =
+    useSearch()
+
+  const { rubrics, activeRubricId, setActiveRubric, indexingRubrics, getRubricById, getIndexForRubric } = useRubric()
+
   const [query, setQuery] = useState("")
   const [resultLimit, setResultLimit] = useState(DEFAULT_RESULT_LIMIT.toString())
   const [isSearching, setIsSearching] = useState(false)
@@ -46,29 +40,46 @@ export function SearchInterface() {
   const handleSearch = useCallback(async () => {
     if (!canSearch) return
 
-    console.log("[v0] Search initiated with:", {
-      query,
-      activeRubricId,
-      rubricName: activeRubricId ? rubrics.find((r) => r.id === activeRubricId)?.name : "None",
-      rubricWeight,
-      allRubrics: rubrics.map((r) => ({ id: r.id, name: r.name })),
-    })
-
     setHasSearched(true)
     setIsSearching(true)
     setCurrentSearchId(null)
 
     try {
-      const { searchId } = activeRubricId
-        ? await performSearchWithRubric(query, Number.parseInt(resultLimit), activeRubricId, rubricWeight)
-        : await performSearch(query, Number.parseInt(resultLimit))
-      setCurrentSearchId(searchId)
+      if (activeRubricId) {
+        const rubric = getRubricById(activeRubricId)
+        const index = activeCorpusId ? getIndexForRubric(activeRubricId, activeCorpusId) : undefined
+
+        if (rubric) {
+          const { searchId } = await performSearchWithRubric(
+            query,
+            Number.parseInt(resultLimit),
+            rubric,
+            index,
+            rubricWeight,
+          )
+          setCurrentSearchId(searchId)
+        }
+      } else {
+        const { searchId } = await performSearch(query, Number.parseInt(resultLimit))
+        setCurrentSearchId(searchId)
+      }
     } catch (error) {
       console.error("Search error:", error)
     } finally {
       setIsSearching(false)
     }
-  }, [canSearch, performSearch, performSearchWithRubric, query, resultLimit, activeRubricId, rubricWeight, rubrics])
+  }, [
+    canSearch,
+    performSearch,
+    performSearchWithRubric,
+    query,
+    resultLimit,
+    activeRubricId,
+    activeCorpusId,
+    rubricWeight,
+    getRubricById,
+    getIndexForRubric,
+  ])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -88,7 +99,9 @@ export function SearchInterface() {
 
   const currentSearch = useMemo(() => {
     if (!currentSearchId) return null
-    return searches.find((s) => s.id === currentSearchId) || null
+    const search = searches.find((s) => s.id === currentSearchId)
+
+    return search || null
   }, [currentSearchId, searches])
 
   return (
@@ -99,67 +112,44 @@ export function SearchInterface() {
           <SearchConfigPanel />
         </div>
 
-        {/* Main Search Content */}
-        <div className="flex-1 min-w-0 space-y-4">
-          {/* Search Bar */}
-          <div className="bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow p-4">
-            <div className="space-y-3">
-              <Input
-                placeholder="Enter your search query..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-12 text-lg px-0 shadow-none"
-                aria-label="Search query input"
-              />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1">
+                <SearchModeSelector
+                  value={searchMode}
+                  onChange={setSearchMode}
+                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                />
+                <ResultLimitSelector
+                  value={resultLimit}
+                  onChange={setResultLimit}
+                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                />
+                <RubricSelector
+                  rubrics={rubrics}
+                  value={activeRubricId}
+                  onChange={setActiveRubric}
+                  disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                  indexingRubrics={indexingRubrics}
+                />
 
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <ResultLimitSelector
-                    value={resultLimit}
-                    onChange={setResultLimit}
-                    disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                  />
-
-                  {activeRubricId && (
-                    <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-lg border border-border flex-1 max-w-md">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">More Retrieval</span>
-                      <Slider
-                        value={[rubricWeight]}
-                        onValueChange={(value) => setRubricWeight(value[0])}
-                        min={0}
-                        max={1}
-                        step={0.05}
-                        className="flex-1"
-                        disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                      />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">More Rubric</span>
-                      <span className="text-xs font-medium text-foreground whitespace-nowrap ml-2">
-                        {Math.round((1 - rubricWeight) * 100)}% • {Math.round(rubricWeight * 100)}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  onClick={handleSearch}
-                  disabled={!canSearch || isSearching}
-                  className="bg-primary text-primary-foreground h-9 px-5 shadow-sm hover:shadow-md transition-all font-semibold"
-                  aria-label={isSearching ? "Searching..." : "Search"}
-                >
-                  {isSearching ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Searching
-                    </>
-                  ) : (
-                    <>
-                      <Search className="mr-2 h-4 w-4" />
-                      Search
-                    </>
-                  )}
-                </Button>
+                {activeRubricId && (
+                  <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-lg border border-border flex-1 max-w-md">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Retrieval</span>
+                    <Slider
+                      value={[rubricWeight]}
+                      onValueChange={(value) => setRubricWeight(value[0])}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      className="flex-1"
+                      disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                    />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">More Rubric</span>
+                    <span className="text-xs font-medium text-foreground whitespace-nowrap ml-2">
+                      {Math.round((1 - rubricWeight) * 100)}% • {Math.round(rubricWeight * 100)}%
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

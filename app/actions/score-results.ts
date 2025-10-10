@@ -1,64 +1,58 @@
 "use server"
 
 import PiClient from "withpi"
+import type { RubricCriterion } from "@/lib/types"
 
-export interface ScoreRequest {
+interface ScoreResultRequest {
   query: string
   text: string
-  criteria: Array<{ label: string; question: string }>
+  criteria: RubricCriterion[]
 }
 
-export interface ScoreResponse {
+interface ScoreResultResponse {
   total_score: number
-  question_scores?: Array<{ label: string; score: number }>
+  question_scores: Array<{ label: string; score: number }>
   error?: string
 }
 
-export async function scoreResult(request: ScoreRequest): Promise<ScoreResponse> {
+export async function scoreResult(request: ScoreResultRequest): Promise<ScoreResultResponse> {
   try {
     const apiKey = process.env.WITHPI_API_KEY
-
-    console.log("[v0] Pi API Key exists:", !!apiKey)
-    console.log("[v0] Pi API Key length:", apiKey?.length ?? 0)
 
     if (!apiKey) {
       return {
         total_score: 0,
-        error: "Pi API key not configured",
+        question_scores: [],
+        error: "WITHPI_API_KEY environment variable is not set",
       }
     }
 
-    console.log("[v0] Initializing Pi Client...")
-    const pi = new PiClient({ apiKey })
-    console.log("[v0] Pi Client initialized successfully")
+    const client = new PiClient({ apiKey })
 
-    console.log("[v0] Scoring request:", {
-      query: request.query.substring(0, 50),
-      textLength: request.text.length,
-      criteriaCount: request.criteria.length,
-    })
+    const scoringSpec = request.criteria.map((criterion) => ({
+      label: criterion.label,
+      question: criterion.question,
+    }))
 
-    const response = await pi.scoringSystem.score({
+    const response = await client.scoringSystem.score({
       llm_input: request.query,
       llm_output: request.text,
-      scoring_spec: request.criteria,
+      scoring_spec: scoringSpec,
     })
 
-    console.log("[v0] Scoring successful, total_score:", response.total_score)
-
     return {
-      total_score: response.total_score ?? 0,
-      question_scores: response.question_scores,
+      total_score: response.total_score,
+      question_scores: Object.entries(response.question_scores).map(([label, score]) => ({
+        label,
+        score: score as number,
+      })),
     }
   } catch (error) {
-    console.error("[v0] Error scoring result:", error)
-    console.error("[v0] Error type:", error?.constructor?.name)
-    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
-
+    console.error("Error scoring result:", error)
     return {
       total_score: 0,
-      error: error instanceof Error ? error.message : "Unknown error",
+      question_scores: [],
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     }
   }
 }

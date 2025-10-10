@@ -3,7 +3,8 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-import { SearchProvider } from "@/lib/search-context"
+import { Providers } from "@/components/providers"
+import { Toaster } from "sonner"
 import "./globals.css"
 import { Suspense } from "react"
 
@@ -22,8 +23,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
-          <SearchProvider>{children}</SearchProvider>
+          <Providers>{children}</Providers>
         </Suspense>
+        <Toaster position="bottom-right" richColors />
         <Analytics />
       </body>
     </html>

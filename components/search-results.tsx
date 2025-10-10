@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, memo, useState } from "react"
+import { useCallback, memo } from "react"
 import type { SearchResult } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,18 +8,11 @@ import { Button } from "@/components/ui/button"
 import { ExternalLink, ThumbsUp, ThumbsDown, GripVertical } from "lucide-react"
 import { useSearch } from "@/lib/search-context"
 import { ExpandableTextCard } from "./expandable-text-card"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { DndContext, closestCenter } from "@dnd-kit/core"
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { useSearchResults } from "@/lib/hooks/use-search-results"
 
 interface SearchResultsProps {
   results: SearchResult[]
@@ -27,49 +20,14 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = memo(function SearchResults({ results, searchId }: SearchResultsProps) {
-  const { rateResult } = useSearch()
-  const [reorderedResults, setReorderedResults] = useState<SearchResult[]>(() =>
-    results.map((r, idx) => ({ ...r, originalRank: idx + 1 })),
-  )
+  const { rateResult, updateResultRanking } = useSearch()
 
-  useMemo(() => {
-    setReorderedResults(results.map((r, idx) => ({ ...r, originalRank: idx + 1 })))
-  }, [results])
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
-
-  const handleRate = useCallback(
-    (resultId: string, rating: "up" | "down") => {
-      if (!searchId) return
-      rateResult(searchId, resultId, rating)
-    },
-    [searchId, rateResult],
-  )
-
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (over && active.id !== over.id) {
-      setReorderedResults((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-        return arrayMove(items, oldIndex, newIndex)
-      })
-    }
-  }, [])
-
-  const resultsList = useMemo(
-    () =>
-      reorderedResults.map((result, index) => (
-        <SortableResultCard key={result.id} result={result} currentIndex={index} onRate={handleRate} />
-      )),
-    [reorderedResults, handleRate],
-  )
+  const { sensors, handleRate, handleDragEnd, resultIds } = useSearchResults({
+    results,
+    searchId,
+    onRate: rateResult,
+    onUpdateRanking: updateResultRanking,
+  })
 
   return (
     <div className="space-y-4">
@@ -80,8 +38,12 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={reorderedResults.map((r) => r.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">{resultsList}</div>
+        <SortableContext items={resultIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {results.map((result, index) => (
+              <SortableResultCard key={result.id} result={result} currentIndex={index} onRate={handleRate} />
+            ))}
+          </div>
         </SortableContext>
       </DndContext>
     </div>
@@ -129,9 +91,9 @@ const ResultCard = memo(function ResultCard({ result, currentIndex, onRate, drag
   const handleRateUp = useCallback(() => onRate(result.id, "up"), [result.id, onRate])
   const handleRateDown = useCallback(() => onRate(result.id, "down"), [result.id, onRate])
 
-  const originalRank = result.originalRank ?? currentIndex + 1
-  const newRank = currentIndex + 1
-  const rankChanged = originalRank !== newRank
+  const currentRank = currentIndex + 1
+  const originalRank = result.originalRank
+  const rankChanged = originalRank !== undefined && originalRank !== currentRank
 
   return (
     <Card className="bg-card border-border hover:border-primary/50 hover:shadow-md transition-all">
@@ -178,7 +140,7 @@ const ResultCard = memo(function ResultCard({ result, currentIndex, onRate, drag
                 variant="outline"
                 className={`text-xs ${rankChanged ? "bg-orange-50 text-orange-700 border-orange-200" : ""}`}
               >
-                {rankChanged ? `#${originalRank} → #${newRank}` : `#${newRank}`}
+                {rankChanged ? `#${originalRank} → #${currentRank}` : `#${currentRank}`}
               </Badge>
             </div>
           </div>

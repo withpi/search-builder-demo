@@ -1,6 +1,7 @@
 "use client"
 
 import { useSearch } from "@/lib/search-context"
+import { useRubric } from "@/lib/rubric-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,8 @@ import { SearchResults } from "./search-results"
 import { RetrievalTrace } from "./retrieval-trace"
 
 export function SearchHistory() {
-  const { searches, corpora, rubrics } = useSearch()
+  const { searches, corpora } = useSearch()
+  const { rubrics } = useRubric()
   const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null)
 
   const selectedSearch = searches.find((s) => s.id === selectedSearchId)
