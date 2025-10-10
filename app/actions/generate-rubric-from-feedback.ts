@@ -2,23 +2,31 @@
 
 import { generateObject } from "ai"
 import { z } from "zod"
-import type { RatedResult, RubricCriterion } from "@/lib/types"
+import type { RubricCriterion } from "@/lib/types"
 import { createOpenAI } from "@ai-sdk/openai"
+
+export interface FeedbackExample {
+  query: string
+  result: string
+  rating: "up" | "down"
+  feedback: string
+}
 
 const questionSchema = z.object({
   label: z.string().describe("A concise label for the evaluation criterion"),
   question: z.string().describe("The evaluation question to ask"),
   options: z.array(z.string()).optional().describe("Optional multiple choice options for the question"),
 })
+
 const openai = createOpenAI({
   apiKey: process.env.OPEN_AI_KEY,
 })
 
-export async function generateRubricFromFeedback(ratedResults: RatedResult[]): Promise<RubricCriterion[]> {
-  const feedbackItems = ratedResults.filter((r) => r.feedback && r.feedback.trim().length > 0)
+export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<RubricCriterion[]> {
+  const feedbackItems = feedbackExamples.filter((item) => item.feedback && item.feedback.trim().length > 0)
 
   if (feedbackItems.length === 0) {
-    throw new Error("No feedback provided in rated results")
+    throw new Error("No feedback provided in examples")
   }
 
   const criteria: RubricCriterion[] = []
@@ -32,8 +40,7 @@ Feedback: "${item.feedback}"
 Query: ${item.query}
 
 RESULT CONTEXT (for understanding structure only):
-Title: ${item.title || "N/A"}
-Text: ${item.text}
+Text: ${item.result}
 
 CRITICAL RULES:
 1. Keep the EXACT requirement from the feedback - do not add qualifiers, interpretations, or extra criteria
@@ -61,16 +68,29 @@ Question: "Does the response provide sufficient detail?"
 
 Create a question that evaluates ${isPositive ? "whether this positive behavior is present" : "whether this negative behavior is avoided"}.`
 
-    const { object } = await generateObject({
-      model: openai("gpt-4o"),
-      schema: questionSchema,
-      prompt,
-    })
+    try {
+      console.log("[v0] Generating rubric criterion for feedback:", item.feedback.substring(0, 50))
 
-    criteria.push({
-      label: object.label,
-      question: object.question,
-    })
+      const { object } = await generateObject({
+        model: openai("gpt-4o"),
+        schema: questionSchema,
+        prompt,
+      })
+
+      console.log("[v0] Generated criterion:", object.label)
+
+      criteria.push({
+        label: object.label,
+        question: object.question,
+      })
+    } catch (error) {
+      console.error("[v0] Error generating criterion:", error)
+      continue
+    }
+  }
+
+  if (criteria.length === 0) {
+    throw new Error("Failed to generate any criteria from feedback")
   }
 
   return criteria
