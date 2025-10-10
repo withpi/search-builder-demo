@@ -31,7 +31,7 @@ interface SearchContextType {
   setActiveCorpus: (id: string) => void
   addCorpus: (name: string, documents: Document[]) => Promise<void>
   performSearch: (query: string, limit: number) => Promise<{ searchId: string; results: SearchResult[] }>
-  rateResult: (searchId: string, resultId: string, rating: "up" | "down") => void
+  rateResult: (searchId: string, resultId: string, rating: "up" | "down", feedback?: string) => void
   getRatedResults: () => RatedResult[]
   performSearchWithRubric: (
     query: string,
@@ -295,7 +295,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   )
 
   const rateResult = useCallback(
-    (searchId: string, resultId: string, rating: "up" | "down") => {
+    (searchId: string, resultId: string, rating: "up" | "down", feedback?: string) => {
       setSearches((prev) =>
         prev.map((search) =>
           search.id === searchId
@@ -318,6 +318,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           text: result.text,
           title: result.title,
           rating,
+          feedback,
           timestamp: new Date(),
           manualRank: result.manualRank,
           originalRank: result.originalRank,
