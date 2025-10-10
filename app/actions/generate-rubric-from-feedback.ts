@@ -1,7 +1,6 @@
 "use server"
 
-import { generateObject } from "ai"
-import { z } from "zod"
+import { generateText } from "ai"
 import type { RubricCriterion } from "@/lib/types"
 import { createOpenAI } from "@ai-sdk/openai"
 
@@ -11,12 +10,6 @@ export interface FeedbackExample {
   rating: "up" | "down"
   feedback: string
 }
-
-const questionSchema = z.object({
-  label: z.string().describe("A concise label for the evaluation criterion"),
-  question: z.string().describe("The evaluation question to ask"),
-  options: z.array(z.string()).optional().describe("Optional multiple choice options for the question"),
-})
 
 const openai = createOpenAI({
   apiKey: process.env.OPEN_AI_KEY,
@@ -67,31 +60,32 @@ Feedback: "response lacks detail"
 Question: "Does the response provide sufficient detail?"
 (NOT: "Does the response provide sufficient detail about Bernal Heights?")
 
-Create a question that evaluates ${isPositive ? "whether this positive behavior is present" : "whether this negative behavior is avoided"}.`
+Create a question that evaluates ${isPositive ? "whether this positive behavior is present" : "whether this negative behavior is avoided"}.
 
-      console.log("[v0] Generating rubric criterion for feedback:", item.feedback.substring(0, 50))
+Respond with ONLY a JSON object in this exact format:
+{
+  "label": "A concise label for the evaluation criterion",
+  "question": "The evaluation question to ask"
+}`
 
-      const { object } = await generateObject({
+      const { text } = await generateText({
         model: openai("gpt-4o"),
-        schema: questionSchema,
         prompt,
       })
 
-      console.log("[v0] Generated criterion:", object.label)
+      const parsed = JSON.parse(text.trim())
+
+      if (!parsed.label || !parsed.question) {
+        throw new Error("Invalid response structure: missing label or question")
+      }
 
       criteria.push({
-        label: object.label,
-        question: object.question,
+        label: parsed.label,
+        question: parsed.question,
       })
     } catch (error) {
-      console.error("[v0] Error generating criterion:", error)
-      console.error("[v0] Error name:", error instanceof Error ? error.name : typeof error)
-      console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-      console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
-      if (error && typeof error === "object" && "cause" in error) {
-        console.error("[v0] Error cause:", error.cause)
-      }
-      console.log("[v0] Skipping this feedback item and continuing...")
+      console.error("[v0] Error generating criterion:", error instanceof Error ? error.message : String(error))
+      // Continue processing other feedback items
     }
   }
 
