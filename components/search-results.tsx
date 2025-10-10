@@ -149,11 +149,11 @@ const ResultCard = memo(function ResultCard({ result, currentIndex, onRate, drag
                   variant="secondary"
                   className="text-xs font-semibold bg-primary/10 text-primary border-primary/20"
                 >
-                  Score: {(result.score ?? 0).toFixed(3)}
+                  Total: {(result.score ?? 0).toFixed(3)}
                 </Badge>
                 {result.piScore !== undefined && (
                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                    Rubric: {(result.piScore ?? 0).toFixed(3)}
+                    Pi Score: {(result.piScore ?? 0).toFixed(3)}
                   </Badge>
                 )}
                 {result.retrievalScore !== undefined && (

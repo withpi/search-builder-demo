@@ -141,10 +141,12 @@ export function RerankSearch() {
                           )}
                         </h4>
                         <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs font-semibold text-primary">Total: {result.score.toFixed(3)}</span>
                           {result.piScore !== undefined && (
-                            <span className="text-xs font-medium text-primary">Pi: {result.piScore.toFixed(3)}</span>
+                            <span className="text-xs font-medium text-blue-600">
+                              Pi Score: {result.piScore.toFixed(3)}
+                            </span>
                           )}
-                          <span className="text-xs text-muted-foreground">Score: {result.score.toFixed(3)}</span>
                           <span className="text-xs text-muted-foreground">#{index + 1}</span>
                         </div>
                       </div>
