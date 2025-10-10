@@ -5,13 +5,16 @@ import { createVertex } from "@ai-sdk/google-vertex"
 import { z } from "zod"
 
 export const vertex = createVertex({
-  project: "twopir-pilot",
+  project: process.env.VERCEL_ENV === "production" ? "twopir-pilot" : "pilabs-dev",
   location: "us-central1",
   googleAuthOptions: {
     credentials: {
       client_email:
-        "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
-      private_key: process.env.SERVICE_ACCOUNT_KEY,
+        process.env.VERCEL_ENV === "production"
+          ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
+          : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
+      // Process private key to handle escaped newlines from environment variables
+      private_key: process.env.SERVICE_ACCOUNT_KEY?.replace(/\\n/g, "\n"),
     },
   },
 })
