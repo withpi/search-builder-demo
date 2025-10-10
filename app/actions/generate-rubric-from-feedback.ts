@@ -1,7 +1,6 @@
 "use server"
 
 import { generateObject } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
 import { z } from "zod"
 
 export interface FeedbackExample {
@@ -16,10 +15,6 @@ export interface GeneratedCriterion {
   question: string
 }
 
-const openai = createOpenAI({
-  apiKey: process.env.OPEN_AI_KEY,
-})
-
 const rubricSchema = z.object({
   criteria: z.array(
     z.object({
@@ -30,10 +25,6 @@ const rubricSchema = z.object({
 })
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
-  if (!process.env.OPEN_AI_KEY) {
-    throw new Error("OPEN_AI_KEY environment variable is not set")
-  }
-
   if (!feedbackExamples || feedbackExamples.length === 0) {
     throw new Error("No feedback examples provided")
   }
@@ -72,10 +63,9 @@ Generate 5-10 evaluation criteria as questions that can be used to score search 
 
   try {
     const { object } = await generateObject({
-      model: openai("gpt-4o"),
+      model: "openai/gpt-4o",
       schema: rubricSchema,
       prompt,
-      mode: "json",
     })
 
     return object.criteria
