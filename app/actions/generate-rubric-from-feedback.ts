@@ -1,6 +1,7 @@
 "use server"
 
-import { generateText } from "ai"
+import { generateObject } from "ai"
+import { z } from "zod"
 
 export interface FeedbackExample {
   query: string
@@ -13,6 +14,15 @@ export interface GeneratedCriterion {
   label: string
   question: string
 }
+
+const rubricSchema = z.object({
+  criteria: z.array(
+    z.object({
+      label: z.string().describe("Short label like 'Relevance' or 'Accuracy'"),
+      question: z.string().describe("Yes/no question for evaluating search results"),
+    }),
+  ),
+})
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
   const positiveExamples = feedbackExamples.filter((ex) => ex.rating === "up")
@@ -45,41 +55,14 @@ ${i + 1}. Query: "${ex.query}"
 Generate 5-10 evaluation criteria as questions that can be used to score search results. Each criterion should:
 1. Be phrased as a yes/no question
 2. Capture patterns from the feedback (e.g., relevance, accuracy, completeness, clarity)
-3. Be specific enough to be actionable but general enough to apply to different queries
+3. Be specific enough to be actionable but general enough to apply to different queries`
 
-Format each criterion as:
-Label: [Short label like "Relevance" or "Accuracy"]
-Question: [Yes/no question like "Does this result directly answer the user's query?"]
-
-Return ONLY the criteria in this exact format, one per line, with a blank line between each criterion.`
-
-  const { text } = await generateText({
+  const { object } = await generateObject({
     model: "google/gemini-2.0-flash-exp",
+    schema: rubricSchema,
     prompt,
     maxOutputTokens: 2000,
   })
 
-  // Parse the generated text into criteria
-  const criteria: GeneratedCriterion[] = []
-  const blocks = text.split("\n\n").filter((block) => block.trim())
-
-  for (const block of blocks) {
-    const lines = block.split("\n")
-    let label = ""
-    let question = ""
-
-    for (const line of lines) {
-      if (line.startsWith("Label:")) {
-        label = line.replace("Label:", "").trim()
-      } else if (line.startsWith("Question:")) {
-        question = line.replace("Question:", "").trim()
-      }
-    }
-
-    if (label && question) {
-      criteria.push({ label, question })
-    }
-  }
-
-  return criteria
+  return object.criteria
 }
