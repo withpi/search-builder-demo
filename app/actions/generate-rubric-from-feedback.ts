@@ -31,50 +31,16 @@ if (!serviceAccountKey) {
   console.error("[v0] SERVICE_ACCOUNT_KEY environment variable is not set")
 }
 
-let credentials: { client_email: string; private_key: string } | null = null
-
-try {
-  if (serviceAccountKey) {
-    // Try to parse as JSON first (full service account)
-    const parsed = JSON.parse(serviceAccountKey)
-    credentials = {
-      client_email: parsed.client_email,
-      private_key: parsed.private_key,
-    }
-    console.log("[v0] Successfully parsed SERVICE_ACCOUNT_KEY as JSON", {
-      hasClientEmail: !!credentials.client_email,
-      hasPrivateKey: !!credentials.private_key,
-    })
-  }
-} catch (error) {
-  console.error("[v0] Failed to parse SERVICE_ACCOUNT_KEY as JSON:", error)
-  // Fallback: treat it as just the private key
-  const isProduction = process.env.VERCEL_ENV === "production"
-  credentials = {
-    client_email: isProduction
-      ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
-      : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
-    private_key: serviceAccountKey.replace(/\\n/g, "\n"),
-  }
-}
-
-const isProduction = process.env.VERCEL_ENV === "production"
-
-console.log("[v0] Initializing Vertex AI provider", {
-  isProduction,
-  project: isProduction ? "twopir-pilot" : "pilabs-dev",
-  hasCredentials: !!credentials,
-})
-
-const vertex = credentials
-  ? createVertex({
-      project: isProduction ? "twopir-pilot" : "pilabs-dev",
-      location: "us-central1",
-      googleAuthOptions: {
-        credentials,
-      },
-    })
-  : null
+export const vertex = createVertex({
+  project: 'twopir-pilot',
+  location: 'us-central1',
+  googleAuthOptions: {
+    credentials: {
+      client_email: 'ai-platform-access@twopir-pilot.iam.gserviceaccount.com'
+      private_key: process.env.SERVICE_ACCOUNT_KEY,
+    },
+  },
+});
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
   if (!vertex) {
