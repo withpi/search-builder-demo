@@ -30,12 +30,24 @@ const openai = createOpenAI({
 })
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
+  console.log("[v0] Starting rubric generation from feedback")
+  console.log("[v0] Number of feedback examples:", feedbackExamples.length)
+
   if (!process.env.OPEN_AI_KEY) {
+    console.error("[v0] OPEN_AI_KEY environment variable is not set")
     throw new Error("OPEN_AI_KEY environment variable is not set")
+  }
+
+  if (!feedbackExamples || feedbackExamples.length === 0) {
+    console.error("[v0] No feedback examples provided")
+    throw new Error("No feedback examples provided")
   }
 
   const positiveExamples = feedbackExamples.filter((ex) => ex.rating === "up")
   const negativeExamples = feedbackExamples.filter((ex) => ex.rating === "down")
+
+  console.log("[v0] Positive examples:", positiveExamples.length)
+  console.log("[v0] Negative examples:", negativeExamples.length)
 
   const prompt = `You are an expert at creating evaluation rubrics for search result quality. Based on user feedback about search results, generate 5-10 evaluation criteria that capture what makes results good or bad.
 
@@ -66,12 +78,24 @@ Generate 5-10 evaluation criteria as questions that can be used to score search 
 2. Capture patterns from the feedback (e.g., relevance, accuracy, completeness, clarity)
 3. Be specific enough to be actionable but general enough to apply to different queries`
 
-  const { object } = await generateObject({
-    model: openai("gpt-4o"),
-    schema: rubricSchema,
-    prompt,
-    maxOutputTokens: 2000,
-  })
+  console.log("[v0] Calling OpenAI API with model: gpt-4o")
 
-  return object.criteria
+  try {
+    const { object } = await generateObject({
+      model: openai("gpt-4o"),
+      schema: rubricSchema,
+      prompt,
+      maxOutputTokens: 2000,
+    })
+
+    console.log("[v0] Successfully generated rubric with", object.criteria.length, "criteria")
+    return object.criteria
+  } catch (error) {
+    console.error("[v0] Error calling OpenAI API:", error)
+    if (error instanceof Error) {
+      console.error("[v0] Error message:", error.message)
+      console.error("[v0] Error stack:", error.stack)
+    }
+    throw new Error(`Failed to generate rubric: ${error instanceof Error ? error.message : "Unknown error"}`)
+  }
 }
