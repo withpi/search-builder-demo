@@ -368,6 +368,14 @@ export function SearchProvider({ children }: { children: ReactNode }) {
             const indexedScores = index.scores.get(result.id)
             const rubricScore = indexedScores?.totalScore ?? 0
             const questions = indexedScores?.questionScores ?? []
+
+            console.log("[v0] Retrieved scores from index:", {
+              resultId: result.id,
+              rubricScore,
+              questionScoresCount: questions.length,
+              questionScores: questions,
+            })
+
             const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
             const combinedScore = combineScores(normalizedRetrievalScore, rubricScore, weight)
 

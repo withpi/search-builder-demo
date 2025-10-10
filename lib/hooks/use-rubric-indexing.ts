@@ -46,10 +46,26 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
       const batchResults = await Promise.all(
         batch.map(async (doc) => {
           try {
+            if (!doc.text || doc.text.trim() === "") {
+              console.warn("[v0] Skipping document with empty text:", { docId: doc.id })
+              return {
+                docId: doc.id,
+                totalScore: 0,
+                questionScores: [],
+              }
+            }
+
             const response = await scoreResult({
               query: "",
               text: doc.text,
               criteria: rubric.criteria,
+            })
+
+            console.log("[v0] Scored document:", {
+              docId: doc.id,
+              totalScore: response.total_score,
+              questionScoresCount: response.question_scores?.length || 0,
+              questionScores: response.question_scores,
             })
 
             return {
