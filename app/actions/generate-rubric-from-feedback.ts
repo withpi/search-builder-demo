@@ -32,9 +32,10 @@ export async function generateRubricFromFeedback(feedbackExamples: FeedbackExamp
   const criteria: RubricCriterion[] = []
 
   for (const item of feedbackItems) {
-    const isPositive = item.rating === "up"
+    try {
+      const isPositive = item.rating === "up"
 
-    const prompt = `Convert this feedback into an evaluation question. The question must be GENERALIZABLE to work for ANY query, not just this specific example.
+      const prompt = `Convert this feedback into an evaluation question. The question must be GENERALIZABLE to work for ANY query, not just this specific example.
 
 Feedback: "${item.feedback}"
 Query: ${item.query}
@@ -68,24 +69,34 @@ Question: "Does the response provide sufficient detail?"
 
 Create a question that evaluates ${isPositive ? "whether this positive behavior is present" : "whether this negative behavior is avoided"}.`
 
-    console.log("[v0] Generating rubric criterion for feedback:", item.feedback.substring(0, 50))
+      console.log("[v0] Generating rubric criterion for feedback:", item.feedback.substring(0, 50))
 
-    const { object } = await generateObject({
-      model: openai("gpt-4o"),
-      schema: questionSchema,
-      prompt,
-    })
+      const { object } = await generateObject({
+        model: openai("gpt-4o"),
+        schema: questionSchema,
+        prompt,
+      })
 
-    console.log("[v0] Generated criterion:", object.label)
+      console.log("[v0] Generated criterion:", object.label)
 
-    criteria.push({
-      label: object.label,
-      question: object.question,
-    })
+      criteria.push({
+        label: object.label,
+        question: object.question,
+      })
+    } catch (error) {
+      console.error("[v0] Error generating criterion:", error)
+      console.error("[v0] Error name:", error instanceof Error ? error.name : typeof error)
+      console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
+      console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
+      if (error && typeof error === "object" && "cause" in error) {
+        console.error("[v0] Error cause:", error.cause)
+      }
+      console.log("[v0] Skipping this feedback item and continuing...")
+    }
   }
 
   if (criteria.length === 0) {
-    throw new Error("Failed to generate any criteria from feedback")
+    throw new Error("Failed to generate any criteria from feedback. Check server logs for details.")
   }
 
   return criteria
