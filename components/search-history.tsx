@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react"
 import { format } from "date-fns"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SearchResults } from "./search-results"
 import { RetrievalTrace } from "./retrieval-trace"
 
@@ -15,6 +15,12 @@ export function SearchHistory() {
   const { searches, corpora } = useSearch()
   const { rubrics } = useRubric()
   const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (searches.length > 0 && !selectedSearchId) {
+      setSelectedSearchId(searches[0].id)
+    }
+  }, [searches, selectedSearchId])
 
   const selectedSearch = searches.find((s) => s.id === selectedSearchId)
 
