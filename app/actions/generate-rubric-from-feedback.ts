@@ -1,7 +1,12 @@
 "use server"
 
 import { generateObject } from "ai"
+import { createOpenAI } from "@ai-sdk/openai"
 import { z } from "zod"
+
+const openai = createOpenAI({
+  apiKey: process.env.OPEN_AI_KEY,
+})
 
 export interface FeedbackExample {
   query: string

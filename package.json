@@ -73,7 +73,7 @@
     "vaul": "^0.9.9",
     "wink-bm25-text-search": "latest",
     "withpi": "latest",
-    "zod": "3.25.67"
+    "zod": "latest"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
