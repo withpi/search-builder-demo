@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@ai-sdk/google-vertex": "latest",
+    "@ai-sdk/openai": "latest",
     "@dnd-kit/core": "latest",
     "@dnd-kit/sortable": "latest",
     "@dnd-kit/utilities": "latest",
