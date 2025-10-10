@@ -1,7 +1,7 @@
 "use server"
 
 import { generateObject } from "ai"
-import { createVertex } from "@ai-sdk/google-vertex"
+import { createOpenAI } from "@ai-sdk/google-vertex"
 import { z } from "zod"
 
 export interface FeedbackExample {
