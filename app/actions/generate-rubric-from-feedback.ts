@@ -31,30 +31,56 @@ if (!serviceAccountKey) {
   console.error("[v0] SERVICE_ACCOUNT_KEY environment variable is not set")
 }
 
-const privateKey = serviceAccountKey ? serviceAccountKey.replace(/\\n/g, "\n") : ""
+let credentials: { client_email: string; private_key: string } | null = null
+
+try {
+  if (serviceAccountKey) {
+    // Try to parse as JSON first (full service account)
+    const parsed = JSON.parse(serviceAccountKey)
+    credentials = {
+      client_email: parsed.client_email,
+      private_key: parsed.private_key,
+    }
+    console.log("[v0] Successfully parsed SERVICE_ACCOUNT_KEY as JSON", {
+      hasClientEmail: !!credentials.client_email,
+      hasPrivateKey: !!credentials.private_key,
+    })
+  }
+} catch (error) {
+  console.error("[v0] Failed to parse SERVICE_ACCOUNT_KEY as JSON:", error)
+  // Fallback: treat it as just the private key
+  const isProduction = process.env.VERCEL_ENV === "production"
+  credentials = {
+    client_email: isProduction
+      ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
+      : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
+    private_key: serviceAccountKey.replace(/\\n/g, "\n"),
+  }
+}
+
 const isProduction = process.env.VERCEL_ENV === "production"
 
 console.log("[v0] Initializing Vertex AI provider", {
   isProduction,
   project: isProduction ? "twopir-pilot" : "pilabs-dev",
-  hasPrivateKey: !!privateKey,
-  privateKeyLength: privateKey.length,
+  hasCredentials: !!credentials,
 })
 
-const vertex = createVertex({
-  project: isProduction ? "twopir-pilot" : "pilabs-dev",
-  location: "us-central1",
-  googleAuthOptions: {
-    credentials: {
-      client_email: isProduction
-        ? "ai-platform-access@twopir-pilot.iam.gserviceaccount.com"
-        : "vercel-access@pilabs-dev.iam.gserviceaccount.com",
-      private_key: privateKey,
-    },
-  },
-})
+const vertex = credentials
+  ? createVertex({
+      project: isProduction ? "twopir-pilot" : "pilabs-dev",
+      location: "us-central1",
+      googleAuthOptions: {
+        credentials,
+      },
+    })
+  : null
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
+  if (!vertex) {
+    throw new Error("Vertex AI provider not initialized - SERVICE_ACCOUNT_KEY is missing or invalid")
+  }
+
   console.log("[v0] Starting rubric generation from feedback", {
     totalExamples: feedbackExamples.length,
     positiveCount: feedbackExamples.filter((ex) => ex.rating === "up").length,
