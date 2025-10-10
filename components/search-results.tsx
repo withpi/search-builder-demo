@@ -168,6 +168,19 @@ const ResultCard = memo(function ResultCard({ result, currentIndex, onRate, drag
                   {rankChanged ? `#${originalRank} → #${currentRank}` : `#${currentRank}`}
                 </Badge>
               </div>
+              {result.questionScores && result.questionScores.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  {result.questionScores.map((qs, idx) => (
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"
+                    >
+                      {qs.label}: {qs.score.toFixed(2)}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <Button

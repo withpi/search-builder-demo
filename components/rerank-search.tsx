@@ -148,6 +148,18 @@ export function RerankSearch() {
                           <span className="text-xs text-muted-foreground">#{index + 1}</span>
                         </div>
                       </div>
+                      {result.questionScores && result.questionScores.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          {result.questionScores.map((qs: { label: string; score: number }, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            >
+                              {qs.label}: {qs.score.toFixed(2)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <p
                         className={`text-sm text-muted-foreground whitespace-pre-wrap ${
                           isExpanded ? "" : "line-clamp-2"
