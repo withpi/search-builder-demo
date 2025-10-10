@@ -11,7 +11,8 @@
   --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.52 0.18 280);
+  /* Using hex color #5a55cc directly for more vibrant primary color */
+  --primary: #5a55cc;
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.96 0.01 280);
   --secondary-foreground: oklch(0.15 0 0);
@@ -23,7 +24,8 @@
   --destructive-foreground: oklch(0.99 0 0);
   --border: oklch(0.9 0.01 280);
   --input: oklch(0.94 0.01 280);
-  --ring: oklch(0.52 0.18 280);
+  /* Using hex color for ring to match primary */
+  --ring: #5a55cc;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -32,12 +34,14 @@
   --radius: 0.75rem;
   --sidebar: oklch(0.99 0 0);
   --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.52 0.18 280);
+  /* Using hex color for sidebar primary */
+  --sidebar-primary: #5a55cc;
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.96 0.01 280);
   --sidebar-accent-foreground: oklch(0.15 0 0);
   --sidebar-border: oklch(0.9 0.01 280);
-  --sidebar-ring: oklch(0.52 0.18 280);
+  /* Using hex color for sidebar ring */
+  --sidebar-ring: #5a55cc;
 }
 
 .dark {
@@ -47,7 +51,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.65 0.2 280);
+  /* Using lighter hex variant for dark mode primary */
+  --primary: #7c75e8;
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -67,7 +72,8 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.65 0.2 280);
+  /* Using lighter hex variant for dark mode sidebar primary */
+  --sidebar-primary: #7c75e8;
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
