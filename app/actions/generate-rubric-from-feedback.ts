@@ -31,16 +31,10 @@ if (!serviceAccountKey) {
   console.error("[v0] SERVICE_ACCOUNT_KEY environment variable is not set")
 }
 
-export const vertex = createVertex({
-  project: 'twopir-pilot',
-  location: 'us-central1',
-  googleAuthOptions: {
-    credentials: {
-      client_email: 'ai-platform-access@twopir-pilot.iam.gserviceaccount.com'
-      private_key: process.env.SERVICE_ACCOUNT_KEY,
-    },
-  },
-});
+const openai = createOpenAI({
+  apiKey: process.env.OPEN_AI_KEY,
+})
+
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<GeneratedCriterion[]> {
   if (!vertex) {
@@ -89,7 +83,7 @@ Generate 5-10 evaluation criteria as questions that can be used to score search 
     console.log("[v0] Calling generateObject with Vertex AI model")
 
     const { object } = await generateObject({
-      model: vertex("gemini-1.5-flash"),
+      model: openai("gpt-4o"),
       schema: rubricSchema,
       prompt,
       maxOutputTokens: 2000,
