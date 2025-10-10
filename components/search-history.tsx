@@ -5,7 +5,6 @@ import { useRubric } from "@/lib/rubric-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Clock, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react"
 import { format } from "date-fns"
 import { useState } from "react"
@@ -21,21 +20,28 @@ export function SearchHistory() {
 
   if (searches.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p className="text-lg">No search history yet</p>
-        <p className="text-sm mt-2">Your searches will appear here</p>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center py-12 text-muted-foreground">
+          <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p className="text-lg">No search history yet</p>
+          <p className="text-sm mt-2">Your searches will appear here</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      {/* History List - Left Scroll Area */}
-      <div className="lg:col-span-1 flex flex-col h-full">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex-shrink-0">Search History</h2>
-        <ScrollArea className="flex-1">
-          <div className="space-y-3 pr-4">
+    <div className="h-full flex">
+      {/* Left Panel - Search History List */}
+      <div className="w-1/3 border-r border-border flex flex-col bg-background">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 px-6 py-6 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Search History</h2>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-3">
             {searches.map((search) => {
               const corpus = corpora.find((c) => c.id === search.corpusId)
               const upvotes = search.results.filter((r) => r.rating === "up").length
@@ -108,30 +114,35 @@ export function SearchHistory() {
               )
             })}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
-      {/* Selected Search Details - Right Scroll Area */}
-      <div className="lg:col-span-2 flex flex-col h-full">
+      {/* Right Panel - Selected Search Details */}
+      <div className="flex-1 flex flex-col bg-background">
         {selectedSearch ? (
           <>
-            <div className="flex items-start justify-between mb-4 flex-shrink-0">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{selectedSearch.query}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(selectedSearch.timestamp), "MMMM d, yyyy 'at' h:mm a")}
-                </p>
+            {/* Fixed Header */}
+            <div className="flex-shrink-0 px-6 py-6 border-b border-border">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">{selectedSearch.query}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {format(new Date(selectedSearch.timestamp), "MMMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setSelectedSearchId(null)} className="border-border">
+                  Close
+                </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setSelectedSearchId(null)} className="border-border">
-                Close
-              </Button>
             </div>
-            <ScrollArea className="flex-1">
-              <div className="space-y-4 pr-4 pb-4">
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="space-y-4">
                 <RetrievalTrace search={selectedSearch} corpora={corpora} />
                 <SearchResults results={selectedSearch.results} searchId={selectedSearch.id} />
               </div>
-            </ScrollArea>
+            </div>
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
