@@ -47,7 +47,7 @@ export function SearchConfigPanel() {
 
   return (
     <Card className="h-fit p-0 overflow-hidden border shadow-sm">
-      <div className="px-6 pb-6 border-b bg-background">
+      <div className="px-6 pt-6 pb-6 border-b bg-background">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold tracking-tight">Configuration</h2>
