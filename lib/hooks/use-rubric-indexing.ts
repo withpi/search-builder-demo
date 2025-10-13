@@ -10,7 +10,7 @@ interface UseRubricIndexingProps {
   onIndexCreated: (index: RubricIndex) => void
 }
 
-const CONCURRENCY_LIMIT = 20
+const CONCURRENCY_LIMIT = 50
 const MAX_RETRIES = 3
 const INITIAL_RETRY_DELAY = 100
 

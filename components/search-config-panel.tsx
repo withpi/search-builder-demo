@@ -20,9 +20,9 @@ interface ConfigSection {
 
 const sections: ConfigSection[] = [
   { id: "index", title: "Index", defaultOpen: true },
-  { id: "query-understanding", title: "Query Understanding", defaultOpen: false },
   { id: "retrieval", title: "Retrieval", defaultOpen: false },
   { id: "scoring-reranking", title: "Scoring and Reranking", defaultOpen: false },
+  { id: "query-understanding", title: "Query Understanding", defaultOpen: false },
 ]
 
 export function SearchConfigPanel() {
@@ -103,6 +103,27 @@ export function SearchConfigPanel() {
                       disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
                     />
                   </div>
+                ) : section.id === "scoring-reranking" ? (
+                  <div className="space-y-3">
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold">Pi Scorer</h3>
+                      <RubricSelector
+                        rubrics={rubrics}
+                        value={activeRubricId}
+                        onChange={setActiveRubric}
+                        disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
+                        indexingRubrics={indexingRubrics}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-semibold">
+                        Pi Reranker <span className="text-muted-foreground font-normal">(Coming Soon)</span>
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Coming soon: use your feedback data to train Pi's Reranking Model
+                      </p>
+                    </div>
+                  </div>
                 ) : section.id === "query-understanding" ? (
                   <div className="space-y-3">
                     <Button
@@ -123,27 +144,6 @@ export function SearchConfigPanel() {
                       <span>Add Pi Intent Classifier</span>
                       <span className="text-xs text-muted-foreground">(coming soon)</span>
                     </Button>
-                  </div>
-                ) : section.id === "scoring-reranking" ? (
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold">Pi Scorer</h3>
-                      <RubricSelector
-                        rubrics={rubrics}
-                        value={activeRubricId}
-                        onChange={setActiveRubric}
-                        disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                        indexingRubrics={indexingRubrics}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold">
-                        Pi Reranker <span className="text-muted-foreground font-normal">(Coming Soon)</span>
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        Coming soon: use your feedback data to train Pi's Reranking Model
-                      </p>
-                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Configuration options will appear here</p>
