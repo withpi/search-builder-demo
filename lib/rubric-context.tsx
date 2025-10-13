@@ -40,13 +40,11 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
     onIndexCreated: handleIndexCreated,
   })
 
-  const addRubric = useCallback(
-    async (rubric: Rubric) => {
-      setRubrics((prev) => [...prev, rubric])
-      await indexRubric(rubric)
-    },
-    [indexRubric],
-  )
+  const addRubric = useCallback(async (rubric: Rubric) => {
+    setRubrics((prev) => [...prev, rubric])
+    // No longer automatically index the corpus when a rubric is created
+    // Scoring will happen in real-time during search instead
+  }, [])
 
   const updateRubric = useCallback((id: string, updates: Partial<Rubric>) => {
     setRubrics((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)))

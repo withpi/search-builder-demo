@@ -27,7 +27,7 @@ const sections: ConfigSection[] = [
 
 export function SearchConfigPanel() {
   const { searchMode, setSearchMode, activeCorpusId, corpora } = useSearch()
-  const { rubrics, activeRubricId, setActiveRubric, indexingRubrics } = useRubric()
+  const { rubrics, activeRubricId, setActiveRubric } = useRubric()
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     index: true,
@@ -46,8 +46,8 @@ export function SearchConfigPanel() {
   }
 
   return (
-    <Card className="h-fit p-0 overflow-hidden border shadow-sm">
-      <div className="px-6 pt-6 pb-6 border-b bg-background">
+    <Card className="h-fit p-0 overflow-hidden border shadow-sm gap-0">
+      <div className="px-6 pt-6 pb-3 border-b bg-background">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold tracking-tight">Configuration</h2>
@@ -112,7 +112,6 @@ export function SearchConfigPanel() {
                         value={activeRubricId}
                         onChange={setActiveRubric}
                         disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                        indexingRubrics={indexingRubrics}
                       />
                     </div>
                     <div className="space-y-2">
