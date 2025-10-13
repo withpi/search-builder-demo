@@ -10,6 +10,10 @@ interface UseRubricIndexingProps {
   onIndexCreated: (index: RubricIndex) => void
 }
 
+const CONCURRENCY_LIMIT = 20
+const MAX_RETRIES = 3
+const INITIAL_RETRY_DELAY = 100
+
 export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexingProps) {
   const [indexingRubrics, setIndexingRubrics] = useState<Set<string>>(new Set())
   const [indexingProgress, setIndexingProgress] = useState<{
@@ -17,6 +21,66 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
     total: number
     corpusName: string
   } | null>(null)
+
+  const scoreDocumentWithRetry = async (
+    doc: { id: string; text: string },
+    criteria: Rubric["criteria"],
+    attempt = 1,
+  ): Promise<{ docId: string; totalScore: number; questionScores: Array<{ label: string; score: number }> }> => {
+    try {
+      if (!doc.text || doc.text.trim() === "") {
+        console.warn("[v0] Skipping document with empty text:", { docId: doc.id })
+        return { docId: doc.id, totalScore: 0, questionScores: [] }
+      }
+
+      const response = await scoreResult({
+        query: "",
+        text: doc.text,
+        criteria,
+      })
+
+      return {
+        docId: doc.id,
+        totalScore: response.error ? 0 : (response.total_score ?? 0),
+        questionScores: response.question_scores || [],
+      }
+    } catch (error) {
+      if (attempt < MAX_RETRIES) {
+        const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1)
+        console.log(`[v0] Retry attempt ${attempt} for document ${doc.id} after ${delay}ms`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        return scoreDocumentWithRetry(doc, criteria, attempt + 1)
+      }
+
+      console.error(`[v0] Failed to score document ${doc.id} after ${MAX_RETRIES} attempts:`, error)
+      return { docId: doc.id, totalScore: 0, questionScores: [] }
+    }
+  }
+
+  const processConcurrentTasks = async <T, R>(
+    items: T[],
+    processor: (item: T) => Promise<R>,
+    onProgress: (completed: number, total: number) => void,
+  ): Promise<R[]> => {
+    const results: R[] = []
+    let completed = 0
+    const total = items.length
+
+    const executeTask = async (item: T): Promise<R> => {
+      const result = await processor(item)
+      completed++
+      onProgress(completed, total)
+      return result
+    }
+
+    for (let i = 0; i < items.length; i += CONCURRENCY_LIMIT) {
+      const batch = items.slice(i, i + CONCURRENCY_LIMIT)
+      const batchResults = await Promise.all(batch.map(executeTask))
+      results.push(...batchResults)
+    }
+
+    return results
+  }
 
   const buildRubricIndex = useCallback(async (rubric: Rubric, corpus: Corpus): Promise<RubricIndex> => {
     console.log("[v0] Building rubric index:", {
@@ -29,79 +93,31 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
 
     const scores = new Map<string, { totalScore: number; questionScores: Array<{ label: string; score: number }> }>()
 
-    const BATCH_SIZE = 50
     const totalDocs = corpus.documents.length
 
-    for (let i = 0; i < totalDocs; i += BATCH_SIZE) {
-      const batchEnd = Math.min(i + BATCH_SIZE, totalDocs)
-      const batch = corpus.documents.slice(i, batchEnd)
-
-      console.log("[v0] Processing batch:", {
-        batchStart: i,
-        batchEnd,
-        batchSize: batch.length,
-        progress: `${batchEnd}/${totalDocs}`,
-      })
-
-      const batchResults = await Promise.all(
-        batch.map(async (doc) => {
-          try {
-            if (!doc.text || doc.text.trim() === "") {
-              console.warn("[v0] Skipping document with empty text:", { docId: doc.id })
-              return {
-                docId: doc.id,
-                totalScore: 0,
-                questionScores: [],
-              }
-            }
-
-            const response = await scoreResult({
-              query: "",
-              text: doc.text,
-              criteria: rubric.criteria,
-            })
-
-            console.log("[v0] Scored document:", {
-              docId: doc.id,
-              totalScore: response.total_score,
-              questionScoresCount: response.question_scores?.length || 0,
-              questionScores: response.question_scores,
-            })
-
-            return {
-              docId: doc.id,
-              totalScore: response.error ? 0 : (response.total_score ?? 0),
-              questionScores: response.question_scores || [],
-            }
-          } catch (error) {
-            console.error("[v0] Error scoring document:", {
-              docId: doc.id,
-              error: error instanceof Error ? error.message : String(error),
-            })
-            return {
-              docId: doc.id,
-              totalScore: 0,
-              questionScores: [],
-            }
-          }
-        }),
-      )
-
-      batchResults.forEach((result) => {
-        scores.set(result.docId, {
-          totalScore: result.totalScore,
-          questionScores: result.questionScores,
+    const results = await processConcurrentTasks(
+      corpus.documents,
+      (doc) => scoreDocumentWithRetry(doc, rubric.criteria),
+      (completed, total) => {
+        setIndexingProgress({
+          current: completed,
+          total,
+          corpusName: corpus.name,
         })
-      })
+      },
+    )
 
-      setIndexingProgress({
-        current: batchEnd,
-        total: totalDocs,
-        corpusName: corpus.name,
+    results.forEach((result) => {
+      scores.set(result.docId, {
+        totalScore: result.totalScore,
+        questionScores: result.questionScores,
       })
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    }
+      console.log("[v0] Stored scores for document:", {
+        docId: result.docId,
+        totalScore: result.totalScore,
+        questionScoresCount: result.questionScores.length,
+      })
+    })
 
     console.log("[v0] Rubric index built successfully:", {
       rubricId: rubric.id,
@@ -168,9 +184,10 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
           corporaIndexed: totalCorpora,
         })
 
-        toast.success(`Index complete for "${rubric.name}"`, {
+        const totalDocs = readyCorpora.reduce((sum, c) => sum + c.documents.length, 0)
+        toast.success(`✓ Indexing complete! (${totalDocs}/${totalDocs})`, {
           id: toastId,
-          description: `${totalCorpora} ${totalCorpora === 1 ? "corpus" : "corpora"} indexed successfully`,
+          description: `"${rubric.name}" indexed successfully`,
         })
       } catch (error) {
         console.error("[v0] Rubric indexing failed:", {

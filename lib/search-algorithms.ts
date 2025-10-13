@@ -145,7 +145,11 @@ export async function generateTFIDFVectors(
     for (let j = i; j < batchEnd; j++) {
       const doc = documents[j]
       const text = `${doc.title || ""} ${doc.text || ""}`.trim()
-      batch.push(prepareText(text))
+      if (text) {
+        batch.push(prepareText(text))
+      } else {
+        batch.push([])
+      }
     }
 
     processedDocs.push(...batch)

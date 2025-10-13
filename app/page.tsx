@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSearch } from "@/lib/search-context"
-import { Loader2, Search, History, BookOpen, Sparkles, BarChart } from "lucide-react"
+import { Loader2, Search, History, BookOpen, Sparkles, BarChart, Github, Key } from "lucide-react"
 import { SearchInterface } from "@/components/search-interface"
 import { SearchHistory } from "@/components/search-history"
 import { CorpusBrowser } from "@/components/corpus-browser"
@@ -60,7 +60,7 @@ export default function Home() {
       ) : activeCorpus?.isReady ? (
         <Tabs defaultValue="search" className="flex flex-col h-screen">
           <nav className="border-b border-border bg-card/80 backdrop-blur-sm shadow-sm flex-shrink-0">
-            <div className="flex justify-center px-6 py-3">
+            <div className="w-full px-6 py-3 flex items-center justify-between">
               <TabsList className="bg-secondary/50 border border-border shadow-sm h-9">
                 <TabsTrigger
                   value="search"
@@ -98,6 +98,27 @@ export default function Home() {
                   Evaluate Search
                 </TabsTrigger>
               </TabsList>
+
+              <div className="flex items-center gap-4">
+                <a
+                  href="https://github.com/withpi/search-builder"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                >
+                  <Github className="h-4 w-4" />
+                  Github
+                </a>
+                <a
+                  href="https://withpi.ai/account/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                >
+                  <Key className="h-4 w-4" />
+                  Get API Key
+                </a>
+              </div>
             </div>
           </nav>
 

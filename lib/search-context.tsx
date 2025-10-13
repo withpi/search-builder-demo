@@ -397,6 +397,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                   criteria: rubric.criteria,
                 })
 
+                console.log("[v0] Real-time scoring result:", {
+                  resultId: result.id,
+                  totalScore: response.total_score,
+                  questionScoresCount: response.question_scores?.length || 0,
+                  questionScores: response.question_scores,
+                })
+
                 const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
                 const rubricScore = response.error ? 0 : (response.total_score ?? 0)
                 const combinedScore = combineScores(normalizedRetrievalScore, rubricScore, weight)
@@ -409,6 +416,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
                   questionScores: response.question_scores,
                 }
               } catch (error) {
+                console.error("[v0] Error scoring result:", error)
                 const normalizedRetrievalScore = normalizeScore(result.score, searchMode)
                 return {
                   ...result,
@@ -422,6 +430,16 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         }
 
         const rerankedResults = scoredResults.sort((a, b) => b.score - a.score).slice(0, limit)
+
+        console.log("[v0] Final reranked results:", {
+          count: rerankedResults.length,
+          results: rerankedResults.map((r) => ({
+            id: r.id,
+            score: r.score,
+            piScore: r.piScore,
+            questionScoresCount: r.questionScores?.length || 0,
+          })),
+        })
 
         setSearches((prev) =>
           prev.map((search) =>
