@@ -4,7 +4,8 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Providers } from "@/components/providers"
-import { Toaster } from "@/components/ui/sonner"
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import "./globals.css"
 import { Suspense } from "react"
 
@@ -25,7 +26,7 @@ export default function RootLayout({
         <Suspense fallback={<div>Loading...</div>}>
           <Providers>{children}</Providers>
         </Suspense>
-        <Toaster position="bottom-right" richColors />
+        <ToastContainer position="bottom-right" autoClose={5000} hideProgressBar={false} closeOnClick pauseOnHover />
         <Analytics />
       </body>
     </html>

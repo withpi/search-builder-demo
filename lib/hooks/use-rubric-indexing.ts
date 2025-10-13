@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { toast } from "sonner"
+import { toast, type Id } from "react-toastify"
 import type { Rubric, Corpus, RubricIndex } from "@/lib/types"
 import { scoreResult } from "@/app/actions/score-results"
 
@@ -82,7 +82,7 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
     return results
   }
 
-  const buildRubricIndex = useCallback(async (rubric: Rubric, corpus: Corpus): Promise<RubricIndex> => {
+  const buildRubricIndex = useCallback(async (rubric: Rubric, corpus: Corpus, toastId: Id): Promise<RubricIndex> => {
     console.log("[v0] Building rubric index:", {
       rubricId: rubric.id,
       rubricName: rubric.name,
@@ -99,6 +99,12 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
       corpus.documents,
       (doc) => scoreDocumentWithRetry(doc, rubric.criteria),
       (completed, total) => {
+        const progress = completed / total
+        toast.update(toastId, {
+          render: `Building index for "${rubric.name}"... ${completed}/${total} documents indexed in ${corpus.name}`,
+          progress,
+        })
+
         setIndexingProgress({
           current: completed,
           total,
@@ -150,31 +156,20 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
       const totalCorpora = readyCorpora.length
 
       const toastId = toast.loading(`Building index for "${rubric.name}"...`, {
-        description: `0 of ${totalCorpora} corpora indexed`,
+        progress: 0,
       })
 
       try {
         let completedCorpora = 0
 
         for (const corpus of readyCorpora) {
-          const progressInterval = setInterval(() => {
-            if (indexingProgress) {
-              toast.loading(`Building index for "${rubric.name}"...`, {
-                id: toastId,
-                description: `${indexingProgress.current}/${indexingProgress.total} documents indexed in ${indexingProgress.corpusName}`,
-              })
-            }
-          }, 500)
-
-          const index = await buildRubricIndex(rubric, corpus)
+          const index = await buildRubricIndex(rubric, corpus, toastId)
           onIndexCreated(index)
 
-          clearInterval(progressInterval)
-
           completedCorpora++
-          toast.loading(`Building index for "${rubric.name}"...`, {
-            id: toastId,
-            description: `${completedCorpora} of ${totalCorpora} corpora indexed`,
+          toast.update(toastId, {
+            render: `Building index for "${rubric.name}"... ${completedCorpora} of ${totalCorpora} corpora indexed`,
+            progress: completedCorpora / totalCorpora,
           })
         }
 
@@ -185,9 +180,11 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
         })
 
         const totalDocs = readyCorpora.reduce((sum, c) => sum + c.documents.length, 0)
-        toast.success(`✓ Indexing complete! (${totalDocs}/${totalDocs})`, {
-          id: toastId,
-          description: `"${rubric.name}" indexed successfully`,
+        toast.update(toastId, {
+          render: `✓ Indexing complete! (${totalDocs}/${totalDocs})`,
+          type: "success",
+          isLoading: false,
+          autoClose: 5000,
         })
       } catch (error) {
         console.error("[v0] Rubric indexing failed:", {
@@ -196,9 +193,11 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
           error: error instanceof Error ? error.message : String(error),
         })
 
-        toast.error(`Failed to build index for "${rubric.name}"`, {
-          id: toastId,
-          description: error instanceof Error ? error.message : "Unknown error occurred",
+        toast.update(toastId, {
+          render: `Failed to build index for "${rubric.name}"`,
+          type: "error",
+          isLoading: false,
+          autoClose: 5000,
         })
         throw error
       } finally {
@@ -210,7 +209,7 @@ export function useRubricIndexing({ corpora, onIndexCreated }: UseRubricIndexing
         setIndexingProgress(null)
       }
     },
-    [corpora, buildRubricIndex, onIndexCreated, indexingProgress],
+    [corpora, buildRubricIndex, onIndexCreated],
   )
 
   const isIndexing = indexingRubrics.size > 0
