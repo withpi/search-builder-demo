@@ -26,6 +26,26 @@ export const ExpandableTextCard = memo(function ExpandableTextCard({
     onExpand?.(id, newState)
   }
 
+  const getLineClampClass = () => {
+    if (isExpanded) return ""
+    switch (maxLines) {
+      case 1:
+        return "line-clamp-1"
+      case 2:
+        return "line-clamp-2"
+      case 3:
+        return "line-clamp-3"
+      case 4:
+        return "line-clamp-4"
+      case 5:
+        return "line-clamp-5"
+      case 6:
+        return "line-clamp-6"
+      default:
+        return "line-clamp-3"
+    }
+  }
+
   return (
     <div
       className={`cursor-pointer group ${className}`}
@@ -41,9 +61,7 @@ export const ExpandableTextCard = memo(function ExpandableTextCard({
       aria-expanded={isExpanded}
       aria-label={isExpanded ? "Collapse text" : "Expand text"}
     >
-      <p className={`text-sm text-muted-foreground whitespace-pre-wrap ${isExpanded ? "" : `line-clamp-${maxLines}`}`}>
-        {text}
-      </p>
+      <p className={`text-sm text-muted-foreground whitespace-pre-wrap ${getLineClampClass()}`}>{text}</p>
       <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-foreground transition-colors">
         {isExpanded ? (
           <>
