@@ -80,7 +80,7 @@ export function SearchConfigPanel() {
           <Collapsible key={section.id} open={openSections[section.id]} onOpenChange={() => toggleSection(section.id)}>
             <CollapsibleTrigger className="w-full">
               <div className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors">
-                <span className="text-sm font-semibold">{section.title}</span>
+                <span className="text-base font-semibold">{section.title}</span>
                 {openSections[section.id] ? (
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 ) : (
@@ -92,8 +92,9 @@ export function SearchConfigPanel() {
               <div className="px-6 pb-6 pt-2">
                 {section.id === "index" ? (
                   <div className="space-y-3">
-                    <label className="text-sm font-medium">Corpus</label>
+                    <label className="text-sm font-medium">Upload your Data</label>
                     <CorpusSelector />
+                    <label className="text-sm font-medium">Link your Database (coming soon)</label>
                   </div>
                 ) : section.id === "scoring-reranking" ? (
                   <div className="space-y-6">
