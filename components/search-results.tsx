@@ -23,7 +23,7 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = memo(function SearchResults({ results, searchId }: SearchResultsProps) {
-  const { rateResult, updateResultRanking, searches, performSearchWithRubric } = useSearch()
+  const { rateResult, updateResultRanking, searches, performSearchWithRubric, scoringWeight } = useSearch()
   const { integrateFeedback, setActiveRubric } = useRubric()
 
   const currentSearch = searches.find((s) => s.id === searchId)
@@ -81,13 +81,14 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
                     limit: results.length,
                     rubric: response.rubric,
                     existingSearchId: searchId,
+                    scoringWeight,
                   })
                   await performSearchWithRubric(
                     currentSearch.query,
                     results.length,
                     response.rubric,
                     undefined,
-                    0.5,
+                    scoringWeight,
                     searchId || undefined,
                   )
                   console.log("[v0] performSearchWithRubric completed")
@@ -131,7 +132,16 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
         }
       }
     },
-    [handleRate, results, currentSearch, integrateFeedback, setActiveRubric, performSearchWithRubric, searchId],
+    [
+      handleRate,
+      results,
+      currentSearch,
+      integrateFeedback,
+      setActiveRubric,
+      performSearchWithRubric,
+      searchId,
+      scoringWeight,
+    ],
   )
 
   return (

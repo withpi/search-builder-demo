@@ -15,6 +15,10 @@ export function RubricSelector({ rubrics, value, onChange, disabled }: RubricSel
   const safeRubrics = rubrics || []
   const isDisabled = disabled || safeRubrics.length === 0
 
+  const sortedRubrics = [...safeRubrics].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+
   const handleChange = (val: string) => {
     const newValue = val === "none" ? null : val
     onChange(newValue)
@@ -30,7 +34,7 @@ export function RubricSelector({ rubrics, value, onChange, disabled }: RubricSel
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">No rubric</SelectItem>
-          {safeRubrics.map((rubric) => (
+          {sortedRubrics.map((rubric) => (
             <SelectItem key={rubric.id} value={rubric.id}>
               {rubric.name}
             </SelectItem>

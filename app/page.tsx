@@ -123,7 +123,7 @@ export default function Home() {
           </nav>
 
           <div className="flex-1 overflow-hidden">
-            <TabsContent value="search" className="mt-0 h-full overflow-y-auto">
+            <TabsContent value="search" className="mt-0 h-full overflow-y-auto" forceMount>
               <div className="container mx-auto px-6 py-8 max-w-7xl">
                 <div className="text-center mb-8">
                   <h1 className="text-5xl font-bold text-foreground tracking-tight mb-2">Search Builder</h1>
@@ -132,20 +132,20 @@ export default function Home() {
                 <SearchInterface />
               </div>
             </TabsContent>
-            <TabsContent value="history" className="mt-0 h-full overflow-hidden">
+            <TabsContent value="history" className="mt-0 h-full overflow-hidden" forceMount>
               <SearchHistory />
             </TabsContent>
-            <TabsContent value="browse" className="mt-0 h-full overflow-y-auto">
+            <TabsContent value="browse" className="mt-0 h-full overflow-y-auto" forceMount>
               <div className="container mx-auto px-6 py-8 max-w-7xl">
                 <CorpusBrowser />
               </div>
             </TabsContent>
-            <TabsContent value="reranker" className="mt-0 h-full overflow-y-auto">
+            <TabsContent value="reranker" className="mt-0 h-full overflow-y-auto" forceMount>
               <div className="container mx-auto px-6 py-8 max-w-7xl">
                 <RerankerTab />
               </div>
             </TabsContent>
-            <TabsContent value="evaluate" className="mt-0 h-full overflow-y-auto">
+            <TabsContent value="evaluate" className="mt-0 h-full overflow-y-auto" forceMount>
               <div className="container mx-auto px-6 py-8 max-w-7xl">
                 <EvaluateSearch />
               </div>

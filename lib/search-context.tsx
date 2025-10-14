@@ -27,8 +27,10 @@ interface SearchContextType {
   indexingSteps: IndexingStep[]
   searchMode: SearchMode
   ratedResults: RatedResult[]
+  scoringWeight: number
   setSearchMode: (mode: SearchMode) => void
   setActiveCorpus: (id: string) => void
+  setScoringWeight: (weight: number) => void
   addCorpus: (name: string, documents: Document[]) => Promise<void>
   performSearch: (query: string, limit: number) => Promise<{ searchId: string; results: SearchResult[] }>
   rateResult: (searchId: string, resultId: string, rating: "up" | "down", feedback?: string) => void
@@ -54,6 +56,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [indexingSteps, setIndexingSteps] = useState<IndexingStep[]>([])
   const [searchMode, setSearchMode] = useState<SearchMode>("hybrid")
   const [ratedResults, setRatedResults] = useState<RatedResult[]>([])
+  const [scoringWeight, setScoringWeight] = useState<number>(0.5)
 
   const searchEnginesRef = useRef<Map<string, any>>(new Map())
   const tfidfVectorizersRef = useRef<Map<string, TFIDFVectorizer>>(new Map())
@@ -551,8 +554,10 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         indexingSteps,
         searchMode,
         ratedResults,
+        scoringWeight,
         setSearchMode,
         setActiveCorpus,
+        setScoringWeight,
         addCorpus,
         performSearch,
         rateResult,

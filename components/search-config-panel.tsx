@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CorpusSelector } from "@/components/corpus-selector"
 import { SearchModeSelector } from "@/components/search-mode-selector"
 import { RubricSelector } from "@/components/rubric-selector"
+import { Slider } from "@/components/ui/slider"
 import { useSearch } from "@/lib/search-context"
 import { useRubric } from "@/lib/rubric-context"
 
@@ -26,7 +27,7 @@ const sections: ConfigSection[] = [
 ]
 
 export function SearchConfigPanel() {
-  const { searchMode, setSearchMode, activeCorpusId, corpora } = useSearch()
+  const { searchMode, setSearchMode, activeCorpusId, corpora, scoringWeight, setScoringWeight } = useSearch()
   const { rubrics, activeRubricId, setActiveRubric } = useRubric()
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -44,6 +45,9 @@ export function SearchConfigPanel() {
       [id]: !prev[id],
     }))
   }
+
+  const retrievalPercent = Math.round((1 - scoringWeight) * 100)
+  const rubricPercent = Math.round(scoringWeight * 100)
 
   return (
     <Card className="h-fit p-0 overflow-hidden border shadow-sm gap-0">
@@ -104,7 +108,7 @@ export function SearchConfigPanel() {
                     />
                   </div>
                 ) : section.id === "scoring-reranking" ? (
-                  <div className="space-y-3">
+                  <div className="space-y-6">
                     <div className="space-y-3">
                       <h3 className="text-sm font-semibold">Pi Scorer</h3>
                       <RubricSelector
@@ -113,6 +117,29 @@ export function SearchConfigPanel() {
                         onChange={setActiveRubric}
                         disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
                       />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold">Score Fusion</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Retrieval</span>
+                          <span>Rubric</span>
+                        </div>
+                        <Slider
+                          value={[scoringWeight * 100]}
+                          onValueChange={(values) => setScoringWeight(values[0] / 100)}
+                          min={0}
+                          max={100}
+                          step={5}
+                          disabled={!activeRubricId}
+                          className="w-full"
+                        />
+                        <div className="flex items-center justify-center text-xs font-medium">
+                          <span className="text-muted-foreground">
+                            {retrievalPercent}% Retrieval • {rubricPercent}% Rubric
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-semibold">

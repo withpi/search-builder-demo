@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import type { Rubric, RubricIndex, Corpus } from "./types"
 import { useRubricIndexing } from "./hooks/use-rubric-indexing"
 import { integrateFeedbackIntoRubric } from "@/app/actions/integrate-feedback-into-rubric"
+import { toast } from "react-toastify"
 
 export const FEEDBACK_RUBRIC_PREFIX = "Feedback Rubric v"
 
@@ -51,8 +52,7 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
 
   const addRubric = useCallback(async (rubric: Rubric) => {
     setRubrics((prev) => [...prev, rubric])
-    // No longer automatically index the corpus when a rubric is created
-    // Scoring will happen in real-time during search instead
+    toast.success(`Rubric "${rubric.name}" created!`, { autoClose: 3000 })
   }, [])
 
   const updateRubric = useCallback((id: string, updates: Partial<Rubric>) => {
@@ -92,7 +92,6 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
     const feedbackRubrics = rubrics.filter((r) => r.name.startsWith(FEEDBACK_RUBRIC_PREFIX))
     if (feedbackRubrics.length === 0) return null
 
-    // Extract version numbers and find the highest
     const versions = feedbackRubrics.map((r) => {
       const match = r.name.match(/v(\d+)$/)
       return match ? Number.parseInt(match[1], 10) : -1
@@ -104,13 +103,11 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
   const integrateFeedback = useCallback(
     async (feedback: { query: string; result: string; rating: "up" | "down"; feedback: string }) => {
       try {
-        // Find the latest feedback rubric version
         const latestFeedbackRubric = getLatestFeedbackRubric()
         const nextVersion = latestFeedbackRubric
           ? Number.parseInt(latestFeedbackRubric.name.replace(FEEDBACK_RUBRIC_PREFIX, ""), 10) + 1
           : 0
 
-        // Call the LLM to integrate the feedback
         const result = await integrateFeedbackIntoRubric({
           existingCriteria: latestFeedbackRubric?.criteria || [],
           newFeedback: feedback,
@@ -120,7 +117,6 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
           return { success: false, error: result.error }
         }
 
-        // Create a new versioned rubric with all criteria from previous version plus the new one
         const newRubric: Rubric = {
           id: `rubric-feedback-v${nextVersion}-${Date.now()}`,
           name: `${FEEDBACK_RUBRIC_PREFIX}${nextVersion}`,
@@ -128,8 +124,8 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
           createdAt: new Date(),
         }
 
-        // Add the new rubric to the list
         setRubrics((prev) => [...prev, newRubric])
+        toast.success(`Rubric "${newRubric.name}" created!`, { autoClose: 3000 })
 
         return { success: true, rubric: newRubric, version: nextVersion }
       } catch (error) {

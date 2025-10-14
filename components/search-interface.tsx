@@ -16,17 +16,15 @@ import { RetrievalTrace } from "./retrieval-trace"
 import { SearchConfigPanel } from "./search-config-panel"
 
 export function SearchInterface() {
-  const { performSearch, performSearchWithRubric, activeCorpusId, corpora, searches, searchMode, setSearchMode } =
-    useSearch()
+  const { performSearch, performSearchWithRubric, activeCorpusId, corpora, searches, scoringWeight } = useSearch()
 
-  const { rubrics, activeRubricId, setActiveRubric, indexingRubrics, getRubricById, getIndexForRubric } = useRubric()
+  const { rubrics, activeRubricId, getRubricById, getIndexForRubric } = useRubric()
 
   const [query, setQuery] = useState("")
   const [resultLimit, setResultLimit] = useState(DEFAULT_RESULT_LIMIT.toString())
   const [isSearching, setIsSearching] = useState(false)
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
-  const [rubricWeight, setRubricWeight] = useState(0.5)
 
   const activeCorpus = useMemo(() => corpora.find((c) => c.id === activeCorpusId), [corpora, activeCorpusId])
 
@@ -53,7 +51,7 @@ export function SearchInterface() {
             Number.parseInt(resultLimit),
             rubric,
             index,
-            rubricWeight,
+            scoringWeight,
           )
           setCurrentSearchId(searchId)
         }
@@ -74,7 +72,7 @@ export function SearchInterface() {
     resultLimit,
     activeRubricId,
     activeCorpusId,
-    rubricWeight,
+    scoringWeight,
     getRubricById,
     getIndexForRubric,
   ])
