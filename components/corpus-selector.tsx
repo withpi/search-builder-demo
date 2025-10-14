@@ -18,16 +18,18 @@ export function CorpusSelector() {
       <div className="flex-1">
         <Select value={activeCorpusId || undefined} onValueChange={setActiveCorpus}>
           <SelectTrigger className="w-full bg-background border-border h-9 shadow-sm hover:border-primary/50 transition-colors text-sm">
-            <SelectValue placeholder="Select a corpus" />
+            <SelectValue placeholder="Select a corpus" className="truncate" />
           </SelectTrigger>
           <SelectContent>
             {corpora.map((corpus) => (
               <SelectItem key={corpus.id} value={corpus.id} disabled={corpus.isIndexing}>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{corpus.name}</span>
-                  {corpus.isIndexing && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                <div className="flex items-center gap-2 truncate">
+                  <span className="font-medium truncate">{corpus.name}</span>
+                  {corpus.isIndexing && <Loader2 className="h-3 w-3 animate-spin text-primary flex-shrink-0" />}
                   {corpus.isReady && (
-                    <span className="text-xs text-muted-foreground">({corpus.documents.length} docs)</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                      ({corpus.documents.length} docs)
+                    </span>
                   )}
                 </div>
               </SelectItem>
