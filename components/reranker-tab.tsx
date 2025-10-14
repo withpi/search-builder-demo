@@ -9,9 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RubricEditor } from "./rubric-editor"
 import { RubricGenerator } from "@/components/rubric/scorer_generator"
-import { FeedbackRubricGenerator } from "@/components/feedback-rubric-generator"
 import type { RubricExample } from "@/lib/rubric/rubricActions"
-import type { FeedbackExample } from "@/app/actions/generate-rubric-from-feedback"
 import type PiClient from "withpi"
 import { Clock } from "lucide-react"
 import { format } from "date-fns"
@@ -39,15 +37,6 @@ export function RerankerTab() {
   const validRatedResults = selectedRatedResults.filter((r) => {
     return r && r.query && r.text && typeof r.query === "string" && typeof r.text === "string"
   })
-
-  const feedbackExamples: FeedbackExample[] = validRatedResults
-    .filter((r) => r.feedback && r.feedback.trim().length > 0)
-    .map((r) => ({
-      query: r.query,
-      result: r.text,
-      rating: r.rating,
-      feedback: r.feedback!,
-    }))
 
   // Results that were manually moved up (lower rank number) are treated as better
   // Results that were manually moved down (higher rank number) are treated as worse
@@ -105,18 +94,6 @@ export function RerankerTab() {
     addRubric(newRubric)
   }
 
-  const handleApplyFeedbackRubric = async (criteria: Array<{ label: string; question: string }>) => {
-    const newRubric = {
-      id: `rubric-${Date.now()}`,
-      name: `Feedback Rubric ${new Date().toLocaleDateString()}`,
-      criteria,
-      createdAt: new Date(),
-      trainingCount: feedbackExamples.length,
-    }
-
-    addRubric(newRubric)
-  }
-
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -152,10 +129,9 @@ export function RerankerTab() {
       <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <Tabs defaultValue="edit" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="edit">Edit</TabsTrigger>
               <TabsTrigger value="generate">Generate</TabsTrigger>
-              <TabsTrigger value="feedback">Generate From Feedback</TabsTrigger>
             </TabsList>
 
             <TabsContent value="edit" className="mt-0">
@@ -261,93 +237,6 @@ export function RerankerTab() {
                                         {manuallyRankedCount} reranked
                                       </Badge>
                                     )}
-                                    {feedbackCount > 0 && (
-                                      <Badge variant="default" className="text-xs bg-blue-500">
-                                        {feedbackCount} with feedback
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="pb-3 pl-11">
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {format(new Date(search.timestamp), "MMM d, h:mm a")}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  </ScrollArea>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="feedback" className="mt-0">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Generate from Written Feedback</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Select searches with written feedback to generate evaluation criteria using AI
-                  </p>
-                </div>
-
-                <FeedbackRubricGenerator
-                  feedbackExamples={feedbackExamples}
-                  onApplyRubric={handleApplyFeedbackRubric}
-                />
-
-                {searches.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg">No searches yet</p>
-                    <p className="text-sm mt-2">
-                      Perform searches, rate results, and provide written feedback to generate rubrics
-                    </p>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[400px]">
-                    <div className="space-y-2">
-                      {searches.map((search) => {
-                        const corpus = corpora.find((c) => c.id === search.corpusId)
-                        const feedbackCount = search.results.filter(
-                          (r) => r.rating && r.feedback && r.feedback.trim().length > 0,
-                        ).length
-                        const isSelected = selectedSearchIds.has(search.id)
-
-                        return (
-                          <Card
-                            key={search.id}
-                            className={`cursor-pointer transition-colors ${
-                              isSelected
-                                ? "bg-accent border-accent-foreground/20"
-                                : "bg-card border-border hover:border-muted-foreground/50"
-                            }`}
-                            onClick={() => toggleSearchSelection(search.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <div className="flex items-start gap-3">
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleSearchSelection(search.id)}
-                                  className="mt-1"
-                                />
-                                <div className="flex-1">
-                                  <CardTitle className="text-sm font-medium text-foreground line-clamp-1">
-                                    {search.query}
-                                  </CardTitle>
-                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    <Badge variant="outline" className="text-xs">
-                                      {corpus?.name || "Unknown"}
-                                    </Badge>
-                                    <Badge variant="secondary" className="text-xs uppercase">
-                                      {search.searchMode}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      {search.results.length} results
-                                    </span>
                                     {feedbackCount > 0 && (
                                       <Badge variant="default" className="text-xs bg-blue-500">
                                         {feedbackCount} with feedback

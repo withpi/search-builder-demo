@@ -3,6 +3,9 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 import type { Rubric, RubricIndex, Corpus } from "./types"
 import { useRubricIndexing } from "./hooks/use-rubric-indexing"
+import { integrateFeedbackIntoRubric } from "@/app/actions/integrate-feedback-into-rubric"
+
+export const FEEDBACK_RUBRIC_NAME = "Feedback Rubric"
 
 interface RubricContextType {
   rubrics: Rubric[]
@@ -17,6 +20,12 @@ interface RubricContextType {
   setActiveRubric: (id: string | null) => void
   getRubricById: (id: string) => Rubric | undefined
   getIndexForRubric: (rubricId: string, corpusId: string) => RubricIndex | undefined
+  integrateFeedback: (feedback: {
+    query: string
+    result: string
+    rating: "up" | "down"
+    feedback: string
+  }) => Promise<{ success: boolean; error?: string; isNewRubric?: boolean; rubricId?: string }>
 }
 
 const RubricContext = createContext<RubricContextType | undefined>(undefined)
@@ -79,6 +88,47 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
     [rubricIndexes],
   )
 
+  const integrateFeedback = useCallback(
+    async (feedback: { query: string; result: string; rating: "up" | "down"; feedback: string }) => {
+      try {
+        // Find or create the feedback rubric
+        let feedbackRubric = rubrics.find((r) => r.name === FEEDBACK_RUBRIC_NAME)
+        const isNewRubric = !feedbackRubric
+
+        if (!feedbackRubric) {
+          // Create the feedback rubric if it doesn't exist
+          feedbackRubric = {
+            id: `rubric-feedback-${Date.now()}`,
+            name: FEEDBACK_RUBRIC_NAME,
+            criteria: [],
+            createdAt: new Date(),
+          }
+          setRubrics((prev) => [...prev, feedbackRubric!])
+        }
+
+        // Call the LLM to integrate the feedback
+        const result = await integrateFeedbackIntoRubric({
+          existingCriteria: feedbackRubric.criteria,
+          newFeedback: feedback,
+        })
+
+        if (!result.success) {
+          return { success: false, error: result.error }
+        }
+
+        // Add the new criterion to the rubric
+        const updatedCriteria = [...feedbackRubric.criteria, result.criterion!]
+        updateRubric(feedbackRubric.id, { criteria: updatedCriteria })
+
+        return { success: true, isNewRubric, rubricId: feedbackRubric.id }
+      } catch (error) {
+        console.error("[v0] Error in integrateFeedback:", error)
+        return { success: false, error: "Failed to integrate feedback" }
+      }
+    },
+    [rubrics, updateRubric],
+  )
+
   return (
     <RubricContext.Provider
       value={{
@@ -94,6 +144,7 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
         setActiveRubric,
         getRubricById,
         getIndexForRubric,
+        integrateFeedback,
       }}
     >
       {children}

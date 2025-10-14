@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ExternalLink, ThumbsUp, ThumbsDown, GripVertical } from "lucide-react"
 import { useSearch } from "@/lib/search-context"
+import { useRubric } from "@/lib/rubric-context"
 import { ExpandableTextCard } from "./expandable-text-card"
 import { DndContext, closestCenter } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
@@ -14,6 +15,7 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useSearchResults } from "@/lib/hooks/use-search-results"
 import { RatingFeedbackModal } from "./rating-feedback-modal"
+import { toast } from "react-toastify"
 
 interface SearchResultsProps {
   results: SearchResult[]
@@ -21,7 +23,10 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = memo(function SearchResults({ results, searchId }: SearchResultsProps) {
-  const { rateResult, updateResultRanking } = useSearch()
+  const { rateResult, updateResultRanking, searches, performSearchWithRubric } = useSearch()
+  const { integrateFeedback, setActiveRubric, activeRubricId, getRubricById } = useRubric()
+
+  const currentSearch = searches.find((s) => s.id === searchId)
 
   const { sensors, handleRate, handleDragEnd, resultIds } = useSearchResults({
     results,
@@ -29,6 +34,78 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
     onRate: rateResult,
     onUpdateRanking: updateResultRanking,
   })
+
+  const handleRateWithFeedback = useCallback(
+    async (resultId: string, rating: "up" | "down", feedback?: string) => {
+      handleRate(resultId, rating, feedback)
+
+      if (feedback && feedback.trim()) {
+        const result = results.find((r) => r.id === resultId)
+        if (result && currentSearch) {
+          const toastId = toast.loading("Integrating feedback into rubric...")
+
+          try {
+            const response = await integrateFeedback({
+              query: currentSearch.query,
+              result: result.text,
+              rating,
+              feedback: feedback.trim(),
+            })
+
+            if (response.success) {
+              toast.update(toastId, {
+                render: "✓ Feedback integrated into Feedback Rubric",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+              })
+
+              if (response.isNewRubric && response.rubricId) {
+                setActiveRubric(response.rubricId)
+
+                // Re-run the search with the new feedback rubric
+                const feedbackRubric = getRubricById(response.rubricId)
+                if (feedbackRubric) {
+                  toast.info("Reranking results with Feedback Rubric...", { autoClose: 2000 })
+                  await performSearchWithRubric(currentSearch.query, results.length, feedbackRubric, undefined, 0.5)
+                }
+              } else if (response.rubricId === activeRubricId) {
+                const feedbackRubric = getRubricById(response.rubricId)
+                if (feedbackRubric) {
+                  toast.info("Reranking results with updated rubric...", { autoClose: 2000 })
+                  await performSearchWithRubric(currentSearch.query, results.length, feedbackRubric, undefined, 0.5)
+                }
+              }
+            } else {
+              toast.update(toastId, {
+                render: "Failed to integrate feedback. The AI service encountered an error.",
+                type: "error",
+                isLoading: false,
+                autoClose: 5000,
+              })
+            }
+          } catch (error) {
+            toast.update(toastId, {
+              render: "Failed to integrate feedback. The AI service encountered an error.",
+              type: "error",
+              isLoading: false,
+              autoClose: 5000,
+            })
+          }
+        }
+      }
+    },
+    [
+      handleRate,
+      results,
+      currentSearch,
+      integrateFeedback,
+      setActiveRubric,
+      activeRubricId,
+      getRubricById,
+      performSearchWithRubric,
+    ],
+  )
 
   return (
     <div className="space-y-4">
@@ -42,7 +119,12 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
         <SortableContext items={resultIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
             {results.map((result, index) => (
-              <SortableResultCard key={result.id} result={result} currentIndex={index} onRate={handleRate} />
+              <SortableResultCard
+                key={result.id}
+                result={result}
+                currentIndex={index}
+                onRate={handleRateWithFeedback}
+              />
             ))}
           </div>
         </SortableContext>

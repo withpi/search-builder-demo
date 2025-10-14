@@ -11,29 +11,40 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { ThumbsUp, ThumbsDown } from "lucide-react"
+import { ThumbsUp, ThumbsDown, Loader2 } from "lucide-react"
 
 interface RatingFeedbackModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   rating: "up" | "down"
-  onSubmit: (feedback: string) => void
+  onSubmit: (feedback: string) => Promise<void> // Made async to support loading state
   resultTitle?: string
 }
 
 export function RatingFeedbackModal({ open, onOpenChange, rating, onSubmit, resultTitle }: RatingFeedbackModalProps) {
   const [feedback, setFeedback] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = () => {
-    onSubmit(feedback)
-    setFeedback("")
-    onOpenChange(false)
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      await onSubmit(feedback)
+      setFeedback("")
+      onOpenChange(false)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleSkip = () => {
-    onSubmit("")
-    setFeedback("")
-    onOpenChange(false)
+  const handleSkip = async () => {
+    setIsSubmitting(true)
+    try {
+      await onSubmit("")
+      setFeedback("")
+      onOpenChange(false)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -75,14 +86,16 @@ export function RatingFeedbackModal({ open, onOpenChange, rating, onSubmit, resu
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             className="min-h-[120px]"
+            disabled={isSubmitting}
           />
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleSkip}>
+          <Button variant="outline" onClick={handleSkip} disabled={isSubmitting}>
             Skip
           </Button>
-          <Button onClick={handleSubmit} className="bg-primary text-primary-foreground">
+          <Button onClick={handleSubmit} className="bg-primary text-primary-foreground" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Feedback
           </Button>
         </DialogFooter>
