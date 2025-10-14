@@ -13,7 +13,7 @@ import type {
   RubricIndex,
 } from "./types"
 import { SearchError, CorpusError } from "./types"
-import { type TFIDFVectorizer, indexDocumentsWithBM25, generateTFIDFVectors } from "./search-algorithms"
+import type { Orama } from "@orama/orama"
 import { scoreResult } from "@/app/actions/score-results"
 import { normalizeScore, combineScores } from "./score-normalization"
 import { arrayMove } from "./array-utils"
@@ -55,14 +55,12 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [searches, setSearches] = useState<Search[]>([])
   const [isLoadingDefault, setIsLoadingDefault] = useState(true)
   const [indexingSteps, setIndexingSteps] = useState<IndexingStep[]>([])
-  const [searchMode, setSearchMode] = useState<SearchMode>("hybrid")
+  const [searchMode, setSearchMode] = useState<SearchMode>("keyword")
   const [ratedResults, setRatedResults] = useState<RatedResult[]>([])
   const [scoringWeight, setScoringWeight] = useState<number>(0.5)
-  const [searchProgress, setSearchProgress] = useState<string | null>(null) // Added search progress state
+  const [searchProgress, setSearchProgress] = useState<string | null>(null)
 
-  const searchEnginesRef = useRef<Map<string, any>>(new Map())
-  const tfidfVectorizersRef = useRef<Map<string, TFIDFVectorizer>>(new Map())
-  const tfidfVectorsRef = useRef<Map<string, number[][]>>(new Map())
+  const oramaDbsRef = useRef<Map<string, Orama<any>>>(new Map())
 
   useEffect(() => {
     loadDefaultCorpus()
@@ -82,26 +80,63 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const generateVectorsForCorpus = useCallback(
+  const indexCorpusWithOrama = useCallback(
     async (documents: Document[], corpusId: string) => {
-      addIndexingStep("Computing TF-IDF vectors", "in-progress", `Processing ${documents.length} documents`)
+      addIndexingStep("Creating Orama search index", "in-progress", `Processing ${documents.length} documents`)
 
       try {
-        const { vectorizer, vectors } = await generateTFIDFVectors(documents, (step, current, total) => {
-          if (current !== undefined && total !== undefined) {
-            updateLastStep("in-progress", `${step}: ${current}/${total}`)
-          } else {
-            updateLastStep("in-progress", step)
-          }
+        const { create, insert } = await import("@orama/orama")
+        const { stopwords: englishStopwords } = await import("@orama/stopwords/english")
+        const { stemmer, language } = await import("@orama/stemmers/english")
+
+        const db = await create({
+          schema: {
+            id: "string",
+            title: "string",
+            text: "string",
+            url: "string",
+          },
+          components: {
+            tokenizer: {
+              stemming: true,
+              stemmer,
+              language,
+              stopWords: englishStopwords,
+            },
+          },
+          sort: {
+            enabled: false,
+          },
         })
 
-        tfidfVectorizersRef.current.set(corpusId, vectorizer)
-        tfidfVectorsRef.current.set(corpusId, vectors)
+        updateLastStep("in-progress", "Inserting documents into index")
 
-        updateLastStep("complete", `Generated ${vectors.length} TF-IDF vectors`)
+        const BATCH_SIZE = 100
+        for (let i = 0; i < documents.length; i += BATCH_SIZE) {
+          const batchEnd = Math.min(i + BATCH_SIZE, documents.length)
+
+          for (let j = i; j < batchEnd; j++) {
+            const doc = documents[j]
+            await insert(db, {
+              id: doc.id,
+              title: doc.title || "",
+              text: doc.text || "",
+              url: doc.url || "",
+            })
+          }
+
+          updateLastStep("in-progress", `Indexed ${batchEnd}/${documents.length} documents`)
+
+          if (batchEnd < documents.length) {
+            await new Promise((resolve) => setTimeout(resolve, 0))
+          }
+        }
+
+        oramaDbsRef.current.set(corpusId, db)
+        updateLastStep("complete", `Indexed ${documents.length} documents with Orama`)
       } catch (error) {
-        updateLastStep("error", error instanceof Error ? error.message : "Vector generation failed")
-        throw new CorpusError("Failed to generate TF-IDF vectors", "PARSE_FAILED", error)
+        updateLastStep("error", error instanceof Error ? error.message : "Indexing failed")
+        throw new CorpusError("Failed to create Orama index", "PARSE_FAILED", error)
       }
     },
     [addIndexingStep, updateLastStep],
@@ -185,15 +220,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      addIndexingStep("Building BM25 index", "in-progress", "Tokenizing and indexing documents")
-
-      const engine = await indexDocumentsWithBM25(documents, (current, total) => {
-        updateLastStep("in-progress", `Indexed ${current}/${total} documents`)
-      })
-
-      updateLastStep("complete", `Indexed ${documents.length} documents with BM25`)
-
-      await generateVectorsForCorpus(documents, "default")
+      await indexCorpusWithOrama(documents, "default")
 
       addIndexingStep("Indexing complete", "complete", "Corpus ready for search")
 
@@ -205,15 +232,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           isReady: true,
         },
       ])
-
-      searchEnginesRef.current.set("default", engine)
     } catch (error) {
       console.error("Error loading default corpus:", error)
       updateLastStep("error", error instanceof Error ? error.message : "Unknown error")
     } finally {
       setIsLoadingDefault(false)
     }
-  }, [addIndexingStep, updateLastStep, generateVectorsForCorpus])
+  }, [addIndexingStep, updateLastStep, indexCorpusWithOrama])
 
   const addCorpus = useCallback(
     async (name: string, documents: Document[]) => {
@@ -230,19 +255,16 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       setCorpora((prev) => [...prev, newCorpus])
 
       try {
-        const engine = await indexDocumentsWithBM25(documents)
-        await generateVectorsForCorpus(documents, id)
+        await indexCorpusWithOrama(documents, id)
 
         setCorpora((prev) => prev.map((c) => (c.id === id ? { ...c, documents, isIndexing: false, isReady: true } : c)))
-
-        searchEnginesRef.current.set(id, engine)
       } catch (error) {
         console.error("Error adding corpus:", error)
         setCorpora((prev) => prev.filter((c) => c.id !== id))
         throw error
       }
     },
-    [generateVectorsForCorpus],
+    [indexCorpusWithOrama],
   )
 
   const performSearch = useCallback(
@@ -266,7 +288,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       try {
         if (searchMode === "keyword") {
           setSearchProgress("Searching keyword database...")
-        } else if (searchMode === "vector") {
+        } else if (searchMode === "semantic") {
           setSearchProgress("Searching vector database...")
         } else {
           setSearchProgress("Searching keyword database...")
@@ -274,17 +296,16 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
         const strategy = SearchStrategyFactory.getStrategy(searchMode)
 
-        const engines = {
-          bm25: searchEnginesRef.current.get(activeCorpusId),
-          vectorizer: tfidfVectorizersRef.current.get(activeCorpusId),
-          vectors: tfidfVectorsRef.current.get(activeCorpusId),
+        const oramaDb = oramaDbsRef.current.get(activeCorpusId)
+        if (!oramaDb) {
+          throw new SearchError("Search index not found", "NOT_READY")
         }
 
         if (searchMode === "hybrid") {
           setSearchProgress("Searching vector database...")
         }
 
-        const { results: finalResults, trace } = strategy.execute(query, limit, corpus, engines)
+        const { results: finalResults, trace } = await strategy.execute(query, limit, corpus, oramaDb)
 
         const searchResults: SearchResult[] = finalResults.slice(0, limit).map((result) => {
           const doc = corpus.documents.find((d) => d.id === result.id)!
@@ -302,12 +323,12 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         }
 
         setSearches((prev) => [search, ...prev])
-        setSearchProgress(null) // Clear progress when done
+        setSearchProgress(null)
 
         return { searchId, results: searchResults }
       } catch (error) {
         console.error("Search failed:", error)
-        setSearchProgress(null) // Clear progress on error
+        setSearchProgress(null)
         throw error instanceof SearchError ? error : new SearchError("Search operation failed", "SEARCH_FAILED", error)
       }
     },
@@ -484,13 +505,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           ),
         )
 
-        setSearchProgress(null) // Clear progress when done
+        setSearchProgress(null)
         console.log("[v0] performSearchWithRubric completed")
 
         return { searchId, results: rerankedResults }
       } catch (error) {
         console.error("Rubric-enhanced search failed:", error)
-        setSearchProgress(null) // Clear progress on error
+        setSearchProgress(null)
         throw error instanceof SearchError
           ? error
           : new SearchError("Rubric-enhanced search failed", "SEARCH_FAILED", error)
@@ -575,7 +596,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         searchMode,
         ratedResults,
         scoringWeight,
-        searchProgress, // Added to context
+        searchProgress,
         setSearchMode,
         setActiveCorpus,
         setScoringWeight,

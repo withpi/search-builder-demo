@@ -3,14 +3,6 @@ export const SEARCH_MODES = {
     label: "Keyword",
     description: "Search by keywords using Okapi BM25",
   },
-  semantic: {
-    label: "Semantic",
-    description: "Search by semantic meaning across vectorized documents",
-  },
-  hybrid: {
-    label: "Hybrid",
-    description: "Blend the results of Keyword and Semantic to get the best of both techniques",
-  },
 } as const
 
 export const PAGINATION = {

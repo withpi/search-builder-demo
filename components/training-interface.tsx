@@ -14,7 +14,7 @@ import { RESULT_LIMITS } from "@/lib/constants"
 export function TrainingInterface() {
   const { performSearch, rateResult, ratedResults } = useSearch()
   const [query, setQuery] = useState("")
-  const [searchMode, setSearchMode] = useState<"keyword" | "semantic" | "hybrid">("hybrid")
+  const [searchMode, setSearchMode] = useState<"keyword">("keyword")
   const [resultLimit, setResultLimit] = useState(RESULT_LIMITS[1])
   const [results, setResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -26,8 +26,8 @@ export function TrainingInterface() {
     setIsSearching(true)
     try {
       const searchResults = await performSearch(query, resultLimit)
-      setResults(searchResults)
-      setCurrentSearchId(`search-${Date.now()}`)
+      setResults(searchResults.results)
+      setCurrentSearchId(searchResults.searchId)
     } catch (error) {
       console.error("[v0] Search failed:", error)
     } finally {
@@ -39,16 +39,16 @@ export function TrainingInterface() {
     (resultId: string, rating: "up" | "down") => {
       if (!currentSearchId) return
       rateResult(currentSearchId, resultId, rating)
+      setResults((prev) => prev.map((r) => (r.id === resultId ? { ...r, rating } : r)))
     },
     [currentSearchId, rateResult],
   )
 
   const getRating = useCallback(
     (resultId: string) => {
-      if (!currentSearchId) return undefined
       return results.find((r) => r.id === resultId)?.rating
     },
-    [currentSearchId, results],
+    [results],
   )
 
   return (

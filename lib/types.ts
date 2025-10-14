@@ -77,7 +77,7 @@ export interface Search {
   rubricId?: string // Add rubric ID to search
 }
 
-export type SearchMode = "keyword" | "semantic" | "hybrid"
+export type SearchMode = "keyword" // Removed semantic and hybrid from SearchMode since Orama vector search requires embeddings
 
 export class SearchError extends Error {
   constructor(
