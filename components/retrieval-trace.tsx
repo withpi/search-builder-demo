@@ -55,7 +55,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                     return (
                       <div key={result.id} className="flex items-center justify-between py-1 border-b border-border/50">
                         <span className="text-muted-foreground">
-                          #{result.rank} {doc?.title || doc?.id}
+                          #{result.rank} {doc?.title || "Untitled"}
                         </span>
                         <span className="font-mono text-foreground">{(result.score ?? 0).toFixed(4)}</span>
                       </div>
@@ -74,7 +74,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                     return (
                       <div key={result.id} className="flex items-center justify-between py-1 border-b border-border/50">
                         <span className="text-muted-foreground">
-                          #{result.rank} {doc?.title || doc?.id}
+                          #{result.rank} {doc?.title || "Untitled"}
                         </span>
                         <span className="font-mono text-foreground">{(result.score ?? 0).toFixed(4)}</span>
                       </div>
@@ -98,7 +98,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                     return (
                       <div key={result.id} className="flex items-center justify-between py-1 border-b border-border/50">
                         <span className="text-muted-foreground">
-                          #{result.rank} {doc?.title || doc?.id}
+                          #{result.rank} {doc?.title || "Untitled"}
                         </span>
                         <span className="font-mono text-foreground">{(result.score ?? 0).toFixed(4)}</span>
                       </div>
@@ -155,7 +155,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                             className="flex items-center justify-between py-1 border-b border-border/50"
                           >
                             <span className="text-muted-foreground">
-                              #{index + 1} {doc?.title || doc?.id}
+                              #{index + 1} {doc?.title || "Untitled"}
                             </span>
                             <span className="font-mono text-foreground">{(result.piScore ?? 0).toFixed(4)}</span>
                           </div>
@@ -179,7 +179,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
                         <div key={result.id} className="py-2 border-b border-border/50 space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
-                              #{result.rank} {doc?.title || doc?.id}
+                              #{result.rank} {doc?.title || "Untitled"}
                             </span>
                             <span className="font-mono text-foreground font-semibold">
                               {(result.combinedScore ?? 0).toFixed(4)}

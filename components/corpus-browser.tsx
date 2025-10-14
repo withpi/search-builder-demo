@@ -85,9 +85,6 @@ export const CorpusBrowser = memo(function CorpusBrowser() {
                   )}
                 </div>
                 <ExpandableTextCard text={doc.text} id={doc.id} />
-                <div className="mt-3">
-                  <span className="text-xs text-muted-foreground">ID: {doc.id}</span>
-                </div>
               </div>
             </div>
           </Card>
