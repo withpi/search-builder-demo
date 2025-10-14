@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   title: "Search Builder",
   description: "Demo platform for search engine technologies",
   generator: "v0.app",
+  icons: {
+    icon: "/icon.png",
+  },
 }
 
 export default function RootLayout({

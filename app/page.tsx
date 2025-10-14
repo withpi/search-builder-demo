@@ -2,7 +2,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSearch } from "@/lib/search-context"
-import { Loader2, Search, History, BookOpen, Sparkles, BarChart, Github, Key } from "lucide-react"
+import { Loader2, Search, History, BookOpen, Sparkles, BarChart, Github, Key, MessageCircle, Calendar, Mail, BookOpen as BookIcon } from "lucide-react"
+import Image from "next/image"
 import { SearchInterface } from "@/components/search-interface"
 import { SearchHistory } from "@/components/search-history"
 import { CorpusBrowser } from "@/components/corpus-browser"
@@ -59,70 +60,102 @@ export default function Home() {
         </div>
       ) : activeCorpus?.isReady ? (
         <Tabs defaultValue="search" className="flex flex-col h-screen">
-          <nav className="border-b border-border bg-card/80 backdrop-blur-sm shadow-sm flex-shrink-0">
-            <div className="text-center py-3">
-              <h1 className="text-5xl font-bold text-foreground tracking-tight mb-2">Search Builder</h1>
-              <p className="text-sm text-muted-foreground">Demo platform for search engine technologies</p>
-            </div>
-
-            <div className="w-full px-6 py-3 flex items-center justify-between">
-              <TabsList className="bg-secondary/50 border border-border shadow-sm h-9">
-                <TabsTrigger
-                  value="search"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-                >
-                  <Search className="h-3.5 w-3.5" />
-                  Search
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-                >
-                  <History className="h-3.5 w-3.5" />
-                  History
-                </TabsTrigger>
-                <TabsTrigger
-                  value="browse"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-                >
-                  <BookOpen className="h-3.5 w-3.5" />
-                  Browse Corpus
-                </TabsTrigger>
-                <TabsTrigger
-                  value="reranker"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Reranker
-                </TabsTrigger>
-                <TabsTrigger
-                  value="evaluate"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-                >
-                  <BarChart className="h-3.5 w-3.5" />
-                  Evaluate Search
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="flex items-center gap-4">
-                <a
-                  href="https://github.com/withpi/search-builder"
-                  target="_blank"
+          <nav className="border-b border-border bg-white shadow-sm flex-shrink-0">
+            <div className="w-full px-6 py-4 flex items-center justify-between">
+              {/* Left side - Logo and Title */}
+              <div className="flex items-center gap-3">
+                <a 
+                  href="https://withpi.ai" 
+                  target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                  className="flex items-center justify-center"
                 >
-                  <Github className="h-4 w-4" />
-                  Github
+                  <Image 
+                    src="/pi-logo.svg" 
+                    alt="Pi Logo" 
+                    width={32} 
+                    height={32}
+                    className="h-8 w-8"
+                  />
                 </a>
-                <a
-                  href="https://withpi.ai/account/keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-                >
-                  <Key className="h-4 w-4" />
-                  Get API Key
-                </a>
+                <h1 className="text-xl font-bold text-black">Pi Search Builder</h1>
+              </div>
+
+              {/* Center - Navigation Tabs */}
+              <div className="flex-1 flex justify-center">
+                <TabsList className="bg-secondary/50 border border-border shadow-sm h-9">
+                  <TabsTrigger
+                    value="search"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                    Search
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="history"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    History
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="browse"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Browse Corpus
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="reranker"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Reranker
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="evaluate"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
+                  >
+                    <BarChart className="h-3.5 w-3.5" />
+                    Evaluate Search
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* Right side - Get in touch and Use the code sections */}
+              <div className="flex items-center gap-6">
+                {/* Get in touch section */}
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-black">Get in touch</span>
+                  <a href="https://discord.gg/zcjXygYMe5" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-black hover:text-gray-600 transition-colors">
+                    <MessageCircle className="h-4 w-4" />
+                    Discord
+                  </a>
+                  <a href="https://calendar.app.google/wvGTUqNLcUberikD8" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-black hover:text-gray-600 transition-colors">
+                    <Calendar className="h-4 w-4" />
+                    Schedule
+                  </a>
+                  <a href="mailto:dhruv@withpi.ai" className="flex items-center gap-1 text-sm text-black hover:text-gray-600 transition-colors">
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </a>
+                </div>
+
+                {/* Separator */}
+                <div className="w-px h-6 bg-gray-300"></div>
+
+                {/* Use the code section */}
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-black">Use the code</span>
+                  <a href="https://github.com/withpi/search-builder" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-black hover:text-gray-600 transition-colors">
+                    <Github className="h-4 w-4" />
+                    GitHub
+                  </a>
+                  <a href="https://code.withpi.ai" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-black hover:text-gray-600 transition-colors">
+                    <BookIcon className="h-4 w-4" />
+                    Docs
+                  </a>
+                </div>
               </div>
             </div>
           </nav>
