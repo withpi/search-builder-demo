@@ -24,7 +24,7 @@ interface SearchResultsProps {
 
 export const SearchResults = memo(function SearchResults({ results, searchId }: SearchResultsProps) {
   const { rateResult, updateResultRanking, searches, performSearchWithRubric } = useSearch()
-  const { integrateFeedback, setActiveRubric, activeRubricId, getRubricById } = useRubric()
+  const { integrateFeedback, setActiveRubric, activeRubricId } = useRubric()
 
   const currentSearch = searches.find((s) => s.id === searchId)
 
@@ -61,14 +61,11 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
                 autoClose: 3000,
               })
 
-              if (response.rubricId) {
-                const newFeedbackRubric = getRubricById(response.rubricId)
-                if (newFeedbackRubric) {
-                  // Always set the new version as active and rerank
-                  setActiveRubric(response.rubricId)
-                  toast.info(`Reranking results with Feedback Rubric${versionText}...`, { autoClose: 2000 })
-                  await performSearchWithRubric(currentSearch.query, results.length, newFeedbackRubric, undefined, 0.5)
-                }
+              if (response.rubric) {
+                // Always set the new version as active and rerank
+                setActiveRubric(response.rubric.id)
+                toast.info(`Reranking results with Feedback Rubric${versionText}...`, { autoClose: 2000 })
+                await performSearchWithRubric(currentSearch.query, results.length, response.rubric, undefined, 0.5)
               }
             } else {
               toast.update(toastId, {
@@ -89,7 +86,7 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
         }
       }
     },
-    [handleRate, results, currentSearch, integrateFeedback, setActiveRubric, getRubricById, performSearchWithRubric],
+    [handleRate, results, currentSearch, integrateFeedback, setActiveRubric, performSearchWithRubric],
   )
 
   return (

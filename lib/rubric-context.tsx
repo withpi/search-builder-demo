@@ -25,7 +25,7 @@ interface RubricContextType {
     result: string
     rating: "up" | "down"
     feedback: string
-  }) => Promise<{ success: boolean; error?: string; rubricId?: string; version?: number }>
+  }) => Promise<{ success: boolean; error?: string; rubric?: Rubric; version?: number }>
 }
 
 const RubricContext = createContext<RubricContextType | undefined>(undefined)
@@ -131,7 +131,7 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
         // Add the new rubric to the list
         setRubrics((prev) => [...prev, newRubric])
 
-        return { success: true, rubricId: newRubric.id, version: nextVersion }
+        return { success: true, rubric: newRubric, version: nextVersion }
       } catch (error) {
         console.error("[v0] Error in integrateFeedback:", error)
         return { success: false, error: "Failed to integrate feedback" }
