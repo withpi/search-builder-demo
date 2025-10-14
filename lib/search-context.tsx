@@ -220,8 +220,9 @@ export function SearchProvider({ children }: { children: ReactNode }) {
             for (const row of data) {
               if (documents.length >= MAX_DOCUMENTS) break
 
+              const idx = documents.length
               documents.push({
-                id: String(row.id || row[0]),
+                id: `default-${idx}`,
                 text: String(row.text || row[3]),
                 title: row.title || row[2] || undefined,
                 url: row.url || row[1] || undefined,
