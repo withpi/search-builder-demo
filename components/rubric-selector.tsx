@@ -39,7 +39,7 @@ export function RubricSelector({ rubrics, value, onChange, disabled }: RubricSel
       </Select>
 
       {selectedRubric && (
-        <div className="space-y-2">
+        <div className="border rounded-lg bg-gray-50 p-3 space-y-2">
           <p className="text-xs text-muted-foreground">
             {selectedRubric.criteria.length} {selectedRubric.criteria.length === 1 ? "criterion" : "criteria"}
           </p>

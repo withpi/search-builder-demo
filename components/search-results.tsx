@@ -53,24 +53,21 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
             })
 
             if (response.success) {
+              const versionText = response.version !== undefined ? ` v${response.version}` : ""
               toast.update(toastId, {
-                render: "✓ Feedback integrated into Feedback Rubric",
+                render: `✓ Feedback integrated into Feedback Rubric${versionText}`,
                 type: "success",
                 isLoading: false,
                 autoClose: 3000,
               })
 
               if (response.rubricId) {
-                const feedbackRubric = getRubricById(response.rubricId)
-                if (feedbackRubric) {
-                  // If it's a new rubric, set it as active
-                  if (response.isNewRubric) {
-                    setActiveRubric(response.rubricId)
-                  }
-
-                  // Always rerank results with the feedback rubric
-                  toast.info("Reranking results with Feedback Rubric...", { autoClose: 2000 })
-                  await performSearchWithRubric(currentSearch.query, results.length, feedbackRubric, undefined, 0.5)
+                const newFeedbackRubric = getRubricById(response.rubricId)
+                if (newFeedbackRubric) {
+                  // Always set the new version as active and rerank
+                  setActiveRubric(response.rubricId)
+                  toast.info(`Reranking results with Feedback Rubric${versionText}...`, { autoClose: 2000 })
+                  await performSearchWithRubric(currentSearch.query, results.length, newFeedbackRubric, undefined, 0.5)
                 }
               }
             } else {

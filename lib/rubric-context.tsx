@@ -5,7 +5,7 @@ import type { Rubric, RubricIndex, Corpus } from "./types"
 import { useRubricIndexing } from "./hooks/use-rubric-indexing"
 import { integrateFeedbackIntoRubric } from "@/app/actions/integrate-feedback-into-rubric"
 
-export const FEEDBACK_RUBRIC_NAME = "Feedback Rubric"
+export const FEEDBACK_RUBRIC_PREFIX = "Feedback Rubric v"
 
 interface RubricContextType {
   rubrics: Rubric[]
@@ -25,7 +25,7 @@ interface RubricContextType {
     result: string
     rating: "up" | "down"
     feedback: string
-  }) => Promise<{ success: boolean; error?: string; isNewRubric?: boolean; rubricId?: string }>
+  }) => Promise<{ success: boolean; error?: string; rubricId?: string; version?: number }>
 }
 
 const RubricContext = createContext<RubricContextType | undefined>(undefined)
@@ -88,27 +88,31 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
     [rubricIndexes],
   )
 
+  const getLatestFeedbackRubric = useCallback(() => {
+    const feedbackRubrics = rubrics.filter((r) => r.name.startsWith(FEEDBACK_RUBRIC_PREFIX))
+    if (feedbackRubrics.length === 0) return null
+
+    // Extract version numbers and find the highest
+    const versions = feedbackRubrics.map((r) => {
+      const match = r.name.match(/v(\d+)$/)
+      return match ? Number.parseInt(match[1], 10) : -1
+    })
+    const maxVersion = Math.max(...versions)
+    return feedbackRubrics.find((r) => r.name === `${FEEDBACK_RUBRIC_PREFIX}${maxVersion}`)
+  }, [rubrics])
+
   const integrateFeedback = useCallback(
     async (feedback: { query: string; result: string; rating: "up" | "down"; feedback: string }) => {
       try {
-        // Find or create the feedback rubric
-        let feedbackRubric = rubrics.find((r) => r.name === FEEDBACK_RUBRIC_NAME)
-        const isNewRubric = !feedbackRubric
-
-        if (!feedbackRubric) {
-          // Create the feedback rubric if it doesn't exist
-          feedbackRubric = {
-            id: `rubric-feedback-${Date.now()}`,
-            name: FEEDBACK_RUBRIC_NAME,
-            criteria: [],
-            createdAt: new Date(),
-          }
-          setRubrics((prev) => [...prev, feedbackRubric!])
-        }
+        // Find the latest feedback rubric version
+        const latestFeedbackRubric = getLatestFeedbackRubric()
+        const nextVersion = latestFeedbackRubric
+          ? Number.parseInt(latestFeedbackRubric.name.replace(FEEDBACK_RUBRIC_PREFIX, ""), 10) + 1
+          : 0
 
         // Call the LLM to integrate the feedback
         const result = await integrateFeedbackIntoRubric({
-          existingCriteria: feedbackRubric.criteria,
+          existingCriteria: latestFeedbackRubric?.criteria || [],
           newFeedback: feedback,
         })
 
@@ -116,17 +120,24 @@ export function RubricProvider({ children, corpora }: RubricProviderProps) {
           return { success: false, error: result.error }
         }
 
-        // Add the new criterion to the rubric
-        const updatedCriteria = [...feedbackRubric.criteria, result.criterion!]
-        updateRubric(feedbackRubric.id, { criteria: updatedCriteria })
+        // Create a new versioned rubric with all criteria from previous version plus the new one
+        const newRubric: Rubric = {
+          id: `rubric-feedback-v${nextVersion}-${Date.now()}`,
+          name: `${FEEDBACK_RUBRIC_PREFIX}${nextVersion}`,
+          criteria: [...(latestFeedbackRubric?.criteria || []), result.criterion!],
+          createdAt: new Date(),
+        }
 
-        return { success: true, isNewRubric, rubricId: feedbackRubric.id }
+        // Add the new rubric to the list
+        setRubrics((prev) => [...prev, newRubric])
+
+        return { success: true, rubricId: newRubric.id, version: nextVersion }
       } catch (error) {
         console.error("[v0] Error in integrateFeedback:", error)
         return { success: false, error: "Failed to integrate feedback" }
       }
     },
-    [rubrics, updateRubric],
+    [getLatestFeedbackRubric],
   )
 
   return (
