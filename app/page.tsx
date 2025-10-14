@@ -162,7 +162,7 @@ export default function Home() {
 
           <div className="flex-1 overflow-hidden">
             <TabsContent value="search" className="mt-0 h-full overflow-y-auto" forceMount>
-              <div className="container mx-auto px-6 py-8 max-w-7xl">
+              <div className="h-full w-full">
                 <SearchInterface />
               </div>
             </TabsContent>
