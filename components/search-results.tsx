@@ -72,23 +72,41 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
               if (response.rubric) {
                 console.log("[v0] Setting active rubric:", response.rubric.id)
                 setActiveRubric(response.rubric.id)
-                toast.info(`Reranking results with Feedback Rubric${versionText}...`, { autoClose: 2000 })
 
-                console.log("[v0] Calling performSearchWithRubric with existingSearchId:", {
-                  query: currentSearch.query,
-                  limit: results.length,
-                  rubric: response.rubric,
-                  existingSearchId: searchId,
-                })
-                await performSearchWithRubric(
-                  currentSearch.query,
-                  results.length,
-                  response.rubric,
-                  undefined,
-                  0.5,
-                  searchId || undefined,
-                )
-                console.log("[v0] performSearchWithRubric completed")
+                const rerankToastId = toast.loading(`Reranking results with Feedback Rubric${versionText}...`)
+
+                try {
+                  console.log("[v0] Calling performSearchWithRubric with existingSearchId:", {
+                    query: currentSearch.query,
+                    limit: results.length,
+                    rubric: response.rubric,
+                    existingSearchId: searchId,
+                  })
+                  await performSearchWithRubric(
+                    currentSearch.query,
+                    results.length,
+                    response.rubric,
+                    undefined,
+                    0.5,
+                    searchId || undefined,
+                  )
+                  console.log("[v0] performSearchWithRubric completed")
+
+                  toast.update(rerankToastId, {
+                    render: `✓ Results reranked with Feedback Rubric${versionText}`,
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000,
+                  })
+                } catch (error) {
+                  console.log("[v0] Error during reranking:", error)
+                  toast.update(rerankToastId, {
+                    render: "Failed to rerank results",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 5000,
+                  })
+                }
               } else {
                 console.log("[v0] No rubric in response!")
               }
