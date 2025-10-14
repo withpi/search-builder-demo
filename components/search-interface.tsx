@@ -14,9 +14,11 @@ import { ErrorBoundary } from "./error-boundary"
 import { DEFAULT_RESULT_LIMIT } from "@/lib/constants"
 import { RetrievalTrace } from "./retrieval-trace"
 import { SearchConfigPanel } from "./search-config-panel"
+import { SearchProgressLoader } from "./search-progress-loader" // Added import
 
 export function SearchInterface() {
-  const { performSearch, performSearchWithRubric, activeCorpusId, corpora, searches, scoringWeight } = useSearch()
+  const { performSearch, performSearchWithRubric, activeCorpusId, corpora, searches, scoringWeight, searchProgress } =
+    useSearch() // Added searchProgress
 
   const { rubrics, activeRubricId, getRubricById, getIndexForRubric } = useRubric()
 
@@ -130,6 +132,8 @@ export function SearchInterface() {
               {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
             </Button>
           </div>
+
+          {isSearching && searchProgress && <SearchProgressLoader message={searchProgress} />}
 
           {/* Results */}
           {isSearching && <SearchResultsSkeleton count={Math.min(Number.parseInt(resultLimit), 5)} />}

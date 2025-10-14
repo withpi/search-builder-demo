@@ -28,6 +28,7 @@ interface SearchContextType {
   searchMode: SearchMode
   ratedResults: RatedResult[]
   scoringWeight: number
+  searchProgress: string | null // Added search progress state
   setSearchMode: (mode: SearchMode) => void
   setActiveCorpus: (id: string) => void
   setScoringWeight: (weight: number) => void
@@ -57,6 +58,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [searchMode, setSearchMode] = useState<SearchMode>("hybrid")
   const [ratedResults, setRatedResults] = useState<RatedResult[]>([])
   const [scoringWeight, setScoringWeight] = useState<number>(0.5)
+  const [searchProgress, setSearchProgress] = useState<string | null>(null) // Added search progress state
 
   const searchEnginesRef = useRef<Map<string, any>>(new Map())
   const tfidfVectorizersRef = useRef<Map<string, TFIDFVectorizer>>(new Map())
@@ -262,12 +264,24 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       const searchId = `search-${Date.now()}`
 
       try {
+        if (searchMode === "keyword") {
+          setSearchProgress("Searching keyword database...")
+        } else if (searchMode === "vector") {
+          setSearchProgress("Searching vector database...")
+        } else {
+          setSearchProgress("Searching keyword database...")
+        }
+
         const strategy = SearchStrategyFactory.getStrategy(searchMode)
 
         const engines = {
           bm25: searchEnginesRef.current.get(activeCorpusId),
           vectorizer: tfidfVectorizersRef.current.get(activeCorpusId),
           vectors: tfidfVectorsRef.current.get(activeCorpusId),
+        }
+
+        if (searchMode === "hybrid") {
+          setSearchProgress("Searching vector database...")
         }
 
         const { results: finalResults, trace } = strategy.execute(query, limit, corpus, engines)
@@ -288,10 +302,12 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         }
 
         setSearches((prev) => [search, ...prev])
+        setSearchProgress(null) // Clear progress when done
 
         return { searchId, results: searchResults }
       } catch (error) {
         console.error("Search failed:", error)
+        setSearchProgress(null) // Clear progress on error
         throw error instanceof SearchError ? error : new SearchError("Search operation failed", "SEARCH_FAILED", error)
       }
     },
@@ -383,6 +399,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           initialResults = searchResult.results
         }
 
+        setSearchProgress(`Reranking with ${rubric.name}...`)
+
         const scoredResults = await Promise.all(
           initialResults.map(async (result) => {
             try {
@@ -466,11 +484,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           ),
         )
 
+        setSearchProgress(null) // Clear progress when done
         console.log("[v0] performSearchWithRubric completed")
 
         return { searchId, results: rerankedResults }
       } catch (error) {
         console.error("Rubric-enhanced search failed:", error)
+        setSearchProgress(null) // Clear progress on error
         throw error instanceof SearchError
           ? error
           : new SearchError("Rubric-enhanced search failed", "SEARCH_FAILED", error)
@@ -555,6 +575,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         searchMode,
         ratedResults,
         scoringWeight,
+        searchProgress, // Added to context
         setSearchMode,
         setActiveCorpus,
         setScoringWeight,
