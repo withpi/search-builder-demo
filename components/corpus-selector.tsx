@@ -27,9 +27,7 @@ export function CorpusSelector() {
                   <span className="font-medium truncate">{corpus.name}</span>
                   {corpus.isIndexing && <Loader2 className="h-3 w-3 animate-spin text-primary flex-shrink-0" />}
                   {corpus.isReady && (
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
-                      ({corpus.documents.length} docs)
-                    </span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">({corpus.documents.length})</span>
                   )}
                 </div>
               </SelectItem>
