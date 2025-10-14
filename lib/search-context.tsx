@@ -197,7 +197,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
       const { asyncBufferFromUrl, parquetRead } = await import("hyparquet")
       const documents: Document[] = []
-      const MAX_DOCUMENTS = 1000
+      const MAX_DOCUMENTS = 10000
 
       for (let fileIndex = 0; fileIndex < parquetFiles.length && documents.length < MAX_DOCUMENTS; fileIndex++) {
         const parquetUrl = parquetFiles[fileIndex].url
