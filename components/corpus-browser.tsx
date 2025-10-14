@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { ExpandableTextCard } from "./expandable-text-card"
 import { EmptyState } from "./empty-state"
 import { PAGINATION } from "@/lib/constants"
+import { formatNumber } from "@/lib/utils"
 
 export const CorpusBrowser = memo(function CorpusBrowser() {
   const { corpora, activeCorpusId } = useSearch()
@@ -51,7 +52,7 @@ export const CorpusBrowser = memo(function CorpusBrowser() {
         <div>
           <h2 className="text-xl font-semibold text-foreground">Browse Corpus</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Showing {startIndex + 1}-{endIndex} of {totalDocuments} documents
+            Showing {startIndex + 1}-{endIndex} of {formatNumber(totalDocuments)} documents
           </p>
         </div>
         <Badge variant="secondary" className="text-sm">

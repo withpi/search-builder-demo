@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
+import { formatNumber } from "@/lib/utils"
 
 interface RetrievalTraceProps {
   search: Search
@@ -40,7 +41,7 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">{searchedCorpus?.name || "Unknown Corpus"}</span>
                 <span className="text-xs text-muted-foreground">
-                  {searchedCorpus?.documents.length.toLocaleString() || 0} docs
+                  {formatNumber(searchedCorpus?.documents.length || 0)} docs
                 </span>
               </div>
             </div>
