@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Upload, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { CorpusUploadDialog } from "./corpus-upload-dialog"
+import { formatNumber } from "@/lib/utils"
 
 export function CorpusSelector() {
   const { corpora, activeCorpusId, setActiveCorpus } = useSearch()
@@ -27,7 +28,9 @@ export function CorpusSelector() {
                   <span className="font-medium truncate">{corpus.name}</span>
                   {corpus.isIndexing && <Loader2 className="h-3 w-3 animate-spin text-primary flex-shrink-0" />}
                   {corpus.isReady && (
-                    <span className="text-xs text-muted-foreground flex-shrink-0">({corpus.documents.length})</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                      ({formatNumber(corpus.documents.length)} docs)
+                    </span>
                   )}
                 </div>
               </SelectItem>
