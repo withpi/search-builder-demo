@@ -2,6 +2,8 @@
 
 **Align your search quality with your domain expertise through intelligent feedback loops**
 
+[🚀 **Live Demo**](https://pi-search-builder.vercel.app/) - Try it out now!
+
 ## Overview
 
 Pi Search Builder transforms search quality from a black box into a transparent, iterative process. Rather than settling for generic relevance algorithms, you can align search results with your specific domain knowledge and user preferences through continuous feedback.
