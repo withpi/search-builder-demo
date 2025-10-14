@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import {
   Dialog,
@@ -17,7 +19,7 @@ interface RatingFeedbackModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   rating: "up" | "down"
-  onSubmit: (feedback: string) => Promise<void> // Made async to support loading state
+  onSubmit: (feedback: string) => Promise<void>
   resultTitle?: string
 }
 
@@ -44,6 +46,15 @@ export function RatingFeedbackModal({ open, onOpenChange, rating, onSubmit, resu
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      if (!isSubmitting) {
+        handleSubmit()
+      }
     }
   }
 
@@ -85,9 +96,14 @@ export function RatingFeedbackModal({ open, onOpenChange, rating, onSubmit, resu
             }
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="min-h-[120px]"
             disabled={isSubmitting}
           />
+          <p className="text-xs text-muted-foreground">
+            Press <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-muted rounded">Enter</kbd> to submit or{" "}
+            <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-muted rounded">Shift+Enter</kbd> for a new line
+          </p>
         </div>
 
         <DialogFooter>

@@ -9,11 +9,13 @@ import { useState } from "react"
 
 interface RetrievalTraceProps {
   search: Search
-  corpora: Array<{ id: string; documents: Array<{ id: string; title?: string }> }>
+  corpora: Array<{ id: string; name: string; documents: Array<{ id: string; title?: string }> }>
 }
 
 export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
   const [traceOpen, setTraceOpen] = useState(false)
+
+  const searchedCorpus = corpora.find((c) => c.id === search.corpusId)
 
   return (
     <Collapsible open={traceOpen} onOpenChange={setTraceOpen}>
@@ -28,10 +30,19 @@ export function RetrievalTrace({ search, corpora }: RetrievalTraceProps) {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-4">
-            <div>
-              <Badge variant="secondary" className="uppercase">
-                {search.trace.mode}
-              </Badge>
+            <div className="border-b border-border pb-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground">Corpus</span>
+                <Badge variant="secondary" className="uppercase">
+                  {search.trace.mode}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">{searchedCorpus?.name || "Unknown Corpus"}</span>
+                <span className="text-xs text-muted-foreground">
+                  {searchedCorpus?.documents.length.toLocaleString() || 0} docs
+                </span>
+              </div>
             </div>
 
             {search.trace.keywordResults && (

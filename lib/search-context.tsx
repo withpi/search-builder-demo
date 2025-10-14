@@ -85,10 +85,21 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       addIndexingStep("Creating Orama search index", "in-progress", `Processing ${documents.length} documents`)
 
       try {
-        const { create, insert } = await import("@orama/orama")
-        const { stopwords: englishStopwords } = await import("@orama/stopwords/english")
-        const { stemmer, language } = await import("@orama/stemmers/english")
+        console.log("[v0] Starting Orama indexing for corpus:", corpusId, "with", documents.length, "documents")
 
+        console.log("[v0] Importing @orama/orama...")
+        const { create, insert } = await import("@orama/orama")
+        console.log("[v0] Successfully imported @orama/orama")
+
+        console.log("[v0] Importing @orama/stopwords/english...")
+        const { stopwords: englishStopwords } = await import("@orama/stopwords/english")
+        console.log("[v0] Successfully imported stopwords, count:", englishStopwords?.length || 0)
+
+        console.log("[v0] Importing @orama/stemmers/english...")
+        const { stemmer, language } = await import("@orama/stemmers/english")
+        console.log("[v0] Successfully imported stemmer")
+
+        console.log("[v0] Creating Orama database with schema...")
         const db = await create({
           schema: {
             id: "string",
@@ -108,6 +119,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
             enabled: false,
           },
         })
+        console.log("[v0] Successfully created Orama database")
 
         updateLastStep("in-progress", "Inserting documents into index")
 
@@ -117,8 +129,9 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
           for (let j = i; j < batchEnd; j++) {
             const doc = documents[j]
+            const generatedId = `${corpusId}-${j}`
             await insert(db, {
-              id: doc.id,
+              id: generatedId,
               title: doc.title || "",
               text: doc.text || "",
               url: doc.url || "",
@@ -132,9 +145,16 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        console.log("[v0] Successfully inserted all documents into Orama")
         oramaDbsRef.current.set(corpusId, db)
         updateLastStep("complete", `Indexed ${documents.length} documents with Orama`)
       } catch (error) {
+        console.error("[v0] Orama indexing error:", error)
+        console.error("[v0] Error details:", {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          type: typeof error,
+        })
         updateLastStep("error", error instanceof Error ? error.message : "Indexing failed")
         throw new CorpusError("Failed to create Orama index", "PARSE_FAILED", error)
       }
@@ -244,6 +264,11 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     async (name: string, documents: Document[]) => {
       const id = `corpus-${Date.now()}`
 
+      const documentsWithIds = documents.map((doc, idx) => ({
+        ...doc,
+        id: `${id}-${idx}`,
+      }))
+
       const newCorpus: Corpus = {
         id,
         name,
@@ -255,9 +280,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       setCorpora((prev) => [...prev, newCorpus])
 
       try {
-        await indexCorpusWithOrama(documents, id)
+        await indexCorpusWithOrama(documentsWithIds, id)
 
-        setCorpora((prev) => prev.map((c) => (c.id === id ? { ...c, documents, isIndexing: false, isReady: true } : c)))
+        setCorpora((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, documents: documentsWithIds, isIndexing: false, isReady: true } : c)),
+        )
+
+        setActiveCorpusId(id)
       } catch (error) {
         console.error("Error adding corpus:", error)
         setCorpora((prev) => prev.filter((c) => c.id !== id))
