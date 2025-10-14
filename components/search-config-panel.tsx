@@ -7,7 +7,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CorpusSelector } from "@/components/corpus-selector"
-import { SearchModeSelector } from "@/components/search-mode-selector"
 import { RubricSelector } from "@/components/rubric-selector"
 import { Slider } from "@/components/ui/slider"
 import { useSearch } from "@/lib/search-context"
@@ -21,19 +20,17 @@ interface ConfigSection {
 
 const sections: ConfigSection[] = [
   { id: "index", title: "Index", defaultOpen: true },
-  { id: "retrieval", title: "Retrieval", defaultOpen: false },
   { id: "scoring-reranking", title: "Scoring and Reranking", defaultOpen: false },
   { id: "query-understanding", title: "Query Understanding", defaultOpen: false },
 ]
 
 export function SearchConfigPanel() {
-  const { searchMode, setSearchMode, activeCorpusId, corpora, scoringWeight, setScoringWeight } = useSearch()
+  const { activeCorpusId, corpora, scoringWeight, setScoringWeight } = useSearch()
   const { rubrics, activeRubricId, setActiveRubric } = useRubric()
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     index: true,
     "query-understanding": true,
-    retrieval: true,
     "scoring-reranking": true,
   })
 
@@ -97,15 +94,6 @@ export function SearchConfigPanel() {
                   <div className="space-y-3">
                     <label className="text-sm font-medium">Corpus</label>
                     <CorpusSelector />
-                  </div>
-                ) : section.id === "retrieval" ? (
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium">Search Mode</label>
-                    <SearchModeSelector
-                      value={searchMode}
-                      onChange={setSearchMode}
-                      disabled={!activeCorpus?.isReady || activeCorpus?.isIndexing}
-                    />
                   </div>
                 ) : section.id === "scoring-reranking" ? (
                   <div className="space-y-6">

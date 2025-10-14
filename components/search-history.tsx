@@ -73,9 +73,6 @@ export function SearchHistory() {
                       <Badge variant="outline" className="text-xs font-medium border-border/60">
                         {corpus?.name || "Unknown"}
                       </Badge>
-                      <Badge variant="secondary" className="text-xs font-medium uppercase tracking-wide">
-                        {search.searchMode}
-                      </Badge>
                       {rubric && (
                         <Badge className="text-xs font-medium bg-blue-500 hover:bg-blue-600 gap-1">
                           <Sparkles className="h-3 w-3" />
