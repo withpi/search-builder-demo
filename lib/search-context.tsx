@@ -39,6 +39,7 @@ interface SearchContextType {
     rubric: Rubric,
     index: RubricIndex | undefined,
     weight: number,
+    existingSearchId?: string,
   ) => Promise<{ searchId: string; results: SearchResult[] }>
   updateResultRanking: (searchId: string, resultId: string, newRank: number, originalRank: number) => void
 }
@@ -353,15 +354,32 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       rubric: Rubric,
       index: RubricIndex | undefined,
       weight = 0.5,
+      existingSearchId?: string,
     ): Promise<{ searchId: string; results: SearchResult[] }> => {
       if (!activeCorpusId) {
         throw new SearchError("No active corpus selected", "NO_CORPUS")
       }
 
       try {
-        const { searchId, results: initialResults } = await performSearch(query, limit * 2)
+        let searchId: string
+        let initialResults: SearchResult[]
 
-        // Score all results in real-time with Pi Scorer
+        if (existingSearchId) {
+          const existingSearch = searches.find((s) => s.id === existingSearchId)
+          if (!existingSearch) {
+            throw new SearchError("Existing search not found", "SEARCH_FAILED")
+          }
+          searchId = existingSearchId
+          initialResults = existingSearch.results.map((r) => ({
+            ...r,
+            score: r.retrievalScore || r.score,
+          }))
+        } else {
+          const searchResult = await performSearch(query, limit * 2)
+          searchId = searchResult.searchId
+          initialResults = searchResult.results
+        }
+
         const scoredResults = await Promise.all(
           initialResults.map(async (result) => {
             try {
@@ -445,6 +463,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           ),
         )
 
+        console.log("[v0] performSearchWithRubric completed")
+
         return { searchId, results: rerankedResults }
       } catch (error) {
         console.error("Rubric-enhanced search failed:", error)
@@ -453,7 +473,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           : new SearchError("Rubric-enhanced search failed", "SEARCH_FAILED", error)
       }
     },
-    [activeCorpusId, performSearch, searchMode],
+    [activeCorpusId, performSearch, searchMode, searches],
   )
 
   const updateResultRanking = useCallback(

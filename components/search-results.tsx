@@ -24,7 +24,7 @@ interface SearchResultsProps {
 
 export const SearchResults = memo(function SearchResults({ results, searchId }: SearchResultsProps) {
   const { rateResult, updateResultRanking, searches, performSearchWithRubric } = useSearch()
-  const { integrateFeedback, setActiveRubric, activeRubricId } = useRubric()
+  const { integrateFeedback, setActiveRubric } = useRubric()
 
   const currentSearch = searches.find((s) => s.id === searchId)
 
@@ -37,20 +37,27 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
 
   const handleRateWithFeedback = useCallback(
     async (resultId: string, rating: "up" | "down", feedback?: string) => {
+      console.log("[v0] handleRateWithFeedback called", { resultId, rating, feedback })
       handleRate(resultId, rating, feedback)
 
       if (feedback && feedback.trim()) {
         const result = results.find((r) => r.id === resultId)
+        console.log("[v0] Found result:", result)
+        console.log("[v0] Current search:", currentSearch)
+
         if (result && currentSearch) {
           const toastId = toast.loading("Integrating feedback into rubric...")
 
           try {
+            console.log("[v0] Calling integrateFeedback...")
             const response = await integrateFeedback({
               query: currentSearch.query,
               result: result.text,
               rating,
               feedback: feedback.trim(),
             })
+
+            console.log("[v0] integrateFeedback response:", response)
 
             if (response.success) {
               const versionText = response.version !== undefined ? ` v${response.version}` : ""
@@ -61,13 +68,32 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
                 autoClose: 3000,
               })
 
+              console.log("[v0] Checking if rubric exists:", response.rubric)
               if (response.rubric) {
-                // Always set the new version as active and rerank
+                console.log("[v0] Setting active rubric:", response.rubric.id)
                 setActiveRubric(response.rubric.id)
                 toast.info(`Reranking results with Feedback Rubric${versionText}...`, { autoClose: 2000 })
-                await performSearchWithRubric(currentSearch.query, results.length, response.rubric, undefined, 0.5)
+
+                console.log("[v0] Calling performSearchWithRubric with existingSearchId:", {
+                  query: currentSearch.query,
+                  limit: results.length,
+                  rubric: response.rubric,
+                  existingSearchId: searchId,
+                })
+                await performSearchWithRubric(
+                  currentSearch.query,
+                  results.length,
+                  response.rubric,
+                  undefined,
+                  0.5,
+                  searchId || undefined,
+                )
+                console.log("[v0] performSearchWithRubric completed")
+              } else {
+                console.log("[v0] No rubric in response!")
               }
             } else {
+              console.log("[v0] Integration failed:", response)
               toast.update(toastId, {
                 render: "Failed to integrate feedback. The AI service encountered an error.",
                 type: "error",
@@ -76,6 +102,7 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
               })
             }
           } catch (error) {
+            console.log("[v0] Error in handleRateWithFeedback:", error)
             toast.update(toastId, {
               render: "Failed to integrate feedback. The AI service encountered an error.",
               type: "error",
@@ -86,7 +113,7 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
         }
       }
     },
-    [handleRate, results, currentSearch, integrateFeedback, setActiveRubric, performSearchWithRubric],
+    [handleRate, results, currentSearch, integrateFeedback, setActiveRubric, performSearchWithRubric, searchId],
   )
 
   return (
