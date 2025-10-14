@@ -104,14 +104,14 @@ export function SearchInterface() {
 
   return (
     <ErrorBoundary>
-      <div className="flex gap-6">
-        {/* Configuration Panel */}
-        <div className="w-80 flex-shrink-0">
+      <div className="flex h-full w-full">
+        {/* Configuration Panel - Fixed to left with margin */}
+        <div className="w-80 flex-shrink-0 ml-4">
           <SearchConfigPanel />
         </div>
 
-        {/* Main Search Area */}
-        <div className="flex-1 space-y-6">
+        {/* Main Search Area - Takes remaining space */}
+        <div className="flex-1 space-y-6 px-6">
           {/* Search Input */}
           <div className="relative">
             <Input
