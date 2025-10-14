@@ -60,19 +60,16 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
                 autoClose: 3000,
               })
 
-              if (response.isNewRubric && response.rubricId) {
-                setActiveRubric(response.rubricId)
+              if (response.rubricId) {
+                const feedbackRubric = getRubricById(response.rubricId)
+                if (feedbackRubric) {
+                  // If it's a new rubric, set it as active
+                  if (response.isNewRubric) {
+                    setActiveRubric(response.rubricId)
+                  }
 
-                // Re-run the search with the new feedback rubric
-                const feedbackRubric = getRubricById(response.rubricId)
-                if (feedbackRubric) {
+                  // Always rerank results with the feedback rubric
                   toast.info("Reranking results with Feedback Rubric...", { autoClose: 2000 })
-                  await performSearchWithRubric(currentSearch.query, results.length, feedbackRubric, undefined, 0.5)
-                }
-              } else if (response.rubricId === activeRubricId) {
-                const feedbackRubric = getRubricById(response.rubricId)
-                if (feedbackRubric) {
-                  toast.info("Reranking results with updated rubric...", { autoClose: 2000 })
                   await performSearchWithRubric(currentSearch.query, results.length, feedbackRubric, undefined, 0.5)
                 }
               }
@@ -95,16 +92,7 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
         }
       }
     },
-    [
-      handleRate,
-      results,
-      currentSearch,
-      integrateFeedback,
-      setActiveRubric,
-      activeRubricId,
-      getRubricById,
-      performSearchWithRubric,
-    ],
+    [handleRate, results, currentSearch, integrateFeedback, setActiveRubric, getRubricById, performSearchWithRubric],
   )
 
   return (
