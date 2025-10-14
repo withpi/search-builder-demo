@@ -1,30 +1,57 @@
-# Next.js workspace file
+# Pi Search Builder
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
-
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/pi-copilot/v0-next-js-workspace-file)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/Inu0eqvD6Q2)
+**Align your search quality with your domain expertise through intelligent feedback loops**
 
 ## Overview
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+Pi Search Builder transforms search quality from a black box into a transparent, iterative process. Rather than settling for generic relevance algorithms, you can align search results with your specific domain knowledge and user preferences through continuous feedback.
 
-## Deployment
+**[🎥 Watch Demo Video](https://youtu.be/zGpgjPb7Ntk)**
 
-Your project is live at:
+### The Problem
 
-**[https://vercel.com/pi-copilot/v0-next-js-workspace-file](https://vercel.com/pi-copilot/v0-next-js-workspace-file)**
+Traditional search solutions force you to choose between:
+- Out-of-the-box algorithms that don't understand your domain
+- Complex ML models that require extensive training data and expertise
+- Manual tuning that doesn't scale with user feedback
 
-## Build your app
+### The Solution
 
-Continue building your app on:
+Pi Search Builder bridges this gap by:
+1. **Starting Simple**: Connect your data corpus and immediately search using semantic, keyword (BM25), or hybrid approaches
+2. **Learning from Feedback**: Provide thumbs up/down ratings and commentary on search results
+3. **Automating Improvement**: Pi automatically generates deterministic judges from your feedback that rerank results in real-time
+4. **Continuous Alignment**: Your search quality evolves alongside your understanding and user needs
 
-**[https://v0.app/chat/projects/Inu0eqvD6Q2](https://v0.app/chat/projects/Inu0eqvD6Q2)**
+## Key Features
 
-## How It Works
+- 🚀 **Instant Setup**: Link your corpus and start searching immediately
+- 🔍 **Flexible Search**: Choose between semantic, keyword, or hybrid search algorithms
+- 👍 **Intuitive Feedback**: Simple thumbs up/down interface with optional commentary
+- 🤖 **Automated Judges**: Feedback automatically becomes deterministic reranking rules
+- ⚡ **Live Reranking**: Results improve in real-time as you provide feedback
+- 🎯 **Domain Alignment**: Search quality reflects your expertise, not generic relevance
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## Getting Started
+
+1. **Connect Your Data**: Import your corpus of documents
+2. **Issue Searches**: Start querying with semantic, keyword, or hybrid search
+3. **Provide Feedback**: Rate results and add commentary on what works
+4. **Watch It Learn**: Pi generates judges that rerank future results automatically
+
+**New to Pi Search Builder?** Check out our [demo video](https://youtu.be/zGpgjPb7Ntk) to see it in action.
+
+## Use Cases
+
+- **Enterprise Search**: Tailor internal knowledge bases to your team's needs
+- **E-commerce**: Align product search with customer preferences
+- **Documentation**: Improve technical doc search based on developer feedback
+- **Content Platforms**: Optimize content discovery for your audience
+
+## Philosophy
+
+Search quality isn't one-size-fits-all. Pi Search Builder recognizes that you are the expert in your domain. By translating your feedback into deterministic judges, we help you build search that truly understands what matters to your users.
+
+---
+
+*Built with Next.js*
