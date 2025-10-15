@@ -16,6 +16,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { useSearchResults } from "@/lib/hooks/use-search-results"
 import { RatingFeedbackModal } from "./rating-feedback-modal"
 import { toast } from "react-toastify"
+import { formatNumber } from "@/lib/utils"
 
 interface SearchResultsProps {
   results: SearchResult[]
@@ -148,7 +149,7 @@ export const SearchResults = memo(function SearchResults({ results, searchId }: 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">
-          Search Results <span className="text-muted-foreground font-normal">({results.length})</span>
+          Search Results <span className="text-muted-foreground font-normal">({formatNumber(results.length)})</span>
         </h2>
       </div>
 
@@ -250,7 +251,7 @@ const ResultCard = memo(function ResultCard({ result, currentIndex, onRate, drag
 
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-                {result.title || `Document ${result.id}`}
+                {result.title || "Untitled Document"}
                 {result.url && (
                   <a
                     href={result.url}
@@ -344,7 +345,7 @@ const ResultCard = memo(function ResultCard({ result, currentIndex, onRate, drag
           onOpenChange={setFeedbackModalOpen}
           rating={pendingRating}
           onSubmit={handleFeedbackSubmit}
-          resultTitle={result.title || `Document ${result.id}`}
+          resultTitle={result.title || "Untitled Document"}
         />
       )}
     </>

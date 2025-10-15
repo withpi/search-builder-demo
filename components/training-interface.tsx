@@ -10,6 +10,7 @@ import { ResultLimitSelector } from "./result-limit-selector"
 import { Search, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react"
 import { EmptyState } from "./empty-state"
 import { RESULT_LIMITS } from "@/lib/constants"
+import { formatNumber } from "@/lib/utils"
 
 export function TrainingInterface() {
   const { performSearch, rateResult, ratedResults } = useSearch()
@@ -94,10 +95,10 @@ export function TrainingInterface() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">
-            {results.length > 0 ? `Results (${results.length})` : "Rate results to build training data"}
+            {results.length > 0 ? `Results (${formatNumber(results.length)})` : "Rate results to build training data"}
           </h3>
           <div className="text-sm text-muted-foreground">
-            {ratedResults.length} result{ratedResults.length !== 1 ? "s" : ""} rated
+            {formatNumber(ratedResults.length)} result{ratedResults.length !== 1 ? "s" : ""} rated
           </div>
         </div>
 

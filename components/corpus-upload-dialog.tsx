@@ -19,6 +19,7 @@ import { Upload, FileText } from "lucide-react"
 import type { Document } from "@/lib/types"
 import Papa from "papaparse"
 import { toast } from "react-toastify"
+import { formatNumber } from "@/lib/utils"
 
 interface CorpusUploadDialogProps {
   open: boolean
@@ -203,7 +204,7 @@ export function CorpusUploadDialog({ open, onOpenChange }: CorpusUploadDialogPro
       }
 
       await addCorpus(corpusName, documents)
-      toast.success(`Successfully uploaded corpus "${corpusName}" with ${documents.length} documents`)
+      toast.success(`Successfully uploaded corpus "${corpusName}" with ${formatNumber(documents.length)} documents`)
       onOpenChange(false)
       setCorpusName("")
       setFile(null)
