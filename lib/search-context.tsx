@@ -123,7 +123,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
         updateLastStep("in-progress", "Inserting documents into index")
 
-        const BATCH_SIZE = 100
+        const BATCH_SIZE = 500 // Increased batch size from 100 to 500 for better performance with large corpora
         for (let i = 0; i < documents.length; i += BATCH_SIZE) {
           const batchEnd = Math.min(i + BATCH_SIZE, documents.length)
 
