@@ -54,6 +54,8 @@ Pi Search Builder bridges this gap by:
 
 Search quality isn't one-size-fits-all. Pi Search Builder recognizes that you are the expert in your domain. By translating your feedback into deterministic judges, we help you build search that truly understands what matters to your users.
 
----
+## Running Locally
 
-*Built with Next.js*
+Search builder indexes each corpus entirely in memory; the only external services it uses are the Pi Labs API and OpenAI's GPT-4o. To run Search Builder locally, you will need API keys for each:
+1. [Create a free account](https://withpi.account) with Pi Labs and visit https://withpi.ai/account/keys to get an API key
+2. [Grab an API key from OpenAI](https://platform.openai.com/api-keys)
