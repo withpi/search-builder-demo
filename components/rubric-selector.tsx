@@ -30,13 +30,18 @@ export function RubricSelector({ rubrics, value, onChange, disabled }: RubricSel
     <div className="space-y-3">
       <Select value={value || "none"} onValueChange={handleChange} disabled={isDisabled}>
         <SelectTrigger className="w-[180px] h-9 bg-background border-border">
-          <SelectValue placeholder={safeRubrics.length === 0 ? "No rubrics created" : "No rubric"} />
+          <SelectValue
+            placeholder={safeRubrics.length === 0 ? "No rubrics created" : "No rubric"}
+            className="truncate"
+          />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="none">No rubric</SelectItem>
+          <SelectItem value="none">
+            <span className="truncate">No rubric</span>
+          </SelectItem>
           {sortedRubrics.map((rubric) => (
             <SelectItem key={rubric.id} value={rubric.id}>
-              {rubric.name}
+              <span className="truncate">{rubric.name}</span>
             </SelectItem>
           ))}
         </SelectContent>
