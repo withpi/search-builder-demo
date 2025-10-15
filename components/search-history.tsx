@@ -10,6 +10,7 @@ import { format } from "date-fns"
 import { useState, useEffect } from "react"
 import { SearchResults } from "./search-results"
 import { RetrievalTrace } from "./retrieval-trace"
+import { formatNumber } from "@/lib/utils"
 
 export function SearchHistory() {
   const { searches, corpora } = useSearch()
@@ -86,7 +87,7 @@ export function SearchHistory() {
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground mt-2 font-medium">
-                      {search.results.length} results
+                      {formatNumber(search.results.length)} results
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 pb-4">

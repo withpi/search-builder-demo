@@ -10,6 +10,7 @@ import { ResultLimitSelector } from "./result-limit-selector"
 import { Search, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react"
 import { EmptyState } from "./empty-state"
 import { RESULT_LIMITS } from "@/lib/constants"
+import { formatNumber } from "@/lib/utils"
 
 export function RerankSearch() {
   const { rubrics, performRerank, isReranking } = useSearch()
@@ -120,7 +121,7 @@ export function RerankSearch() {
           />
         ) : (
           <>
-            <h3 className="text-lg font-semibold text-foreground">Reranked Results ({results.length})</h3>
+            <h3 className="text-lg font-semibold text-foreground">Reranked Results ({formatNumber(results.length)})</h3>
             <div className="space-y-3">
               {results.map((result, index) => {
                 const isExpanded = expandedIds.has(result.id)

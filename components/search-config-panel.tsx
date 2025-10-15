@@ -92,7 +92,7 @@ export function SearchConfigPanel() {
               <div className="px-6 pb-6 pt-2">
                 {section.id === "index" ? (
                   <div className="space-y-3">
-                    <label className="text-sm font-medium">Upload your Data</label>
+                    <h3 className="text-sm font-medium">Upload your Data</h3>
                     <CorpusSelector />
                     <label className="text-sm font-medium">Link your Database (coming soon)</label>
                   </div>

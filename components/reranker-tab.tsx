@@ -14,6 +14,7 @@ import type PiClient from "withpi"
 import { Clock } from "lucide-react"
 import { format } from "date-fns"
 import { useState } from "react"
+import { formatNumber } from "@/lib/utils"
 
 export function RerankerTab() {
   const { searches, corpora, ratedResults } = useSearch()
@@ -225,7 +226,7 @@ export function RerankerTab() {
                                       {search.searchMode}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground">
-                                      {search.results.length} results
+                                      {formatNumber(search.results.length)} results
                                     </span>
                                     {ratedCount > 0 && (
                                       <Badge variant="default" className="text-xs bg-green-500">
