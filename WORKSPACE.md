@@ -628,6 +628,11 @@ Search Builder enables users to experiment with search algorithms, create custom
 - Single search mode (keyword only)
 - No semantic or hybrid search without embeddings
 
+## Pi Scorer Resources
+
+### Writing Rubrics Guide
+- Documentation: https://code.withpi.ai/score/writing_rubrics
+
 ## Recent Changes (Current Session)
 
 ### Migration to Orama
