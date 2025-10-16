@@ -2,6 +2,7 @@
 
 import PiClient from "withpi"
 import type { RubricCriterion } from "@/lib/types"
+import { auth } from "@/auth"
 
 interface ScoreResultRequest {
   query: string
@@ -16,6 +17,8 @@ interface ScoreResultResponse {
 }
 
 export async function scoreResult(request: ScoreResultRequest): Promise<ScoreResultResponse> {
+  await auth();
+
   try {
     const apiKey = process.env.WITHPI_API_KEY
 

@@ -1,5 +1,6 @@
 "use server"
 
+import { auth } from "@/auth";
 import { createOpenAI } from "@ai-sdk/openai"
 
 const openai = createOpenAI({
@@ -17,6 +18,8 @@ export interface FeedbackIntegrationInput {
 }
 
 export async function integrateFeedbackIntoRubric(input: FeedbackIntegrationInput) {
+  await auth();
+
   try {
     const { existingCriteria, newFeedback } = input
 
