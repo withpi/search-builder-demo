@@ -1,5 +1,6 @@
 "use server"
 
+import { auth } from "@/auth"
 import type { RubricCriterion } from "@/lib/types"
 
 export interface FeedbackExample {
@@ -16,6 +17,8 @@ if (!apiKey) {
 }
 
 export async function generateRubricFromFeedback(feedbackExamples: FeedbackExample[]): Promise<RubricCriterion[]> {
+  await auth();
+
   console.log("[v0] Starting rubric generation with", feedbackExamples.length, "examples")
 
   if (!apiKey) {
